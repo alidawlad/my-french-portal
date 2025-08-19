@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { transformWord, toEN, type Token, RULES } from "@/lib/phonetics";
+import { transformWord, toEN, type Token, RULES, type Rule, type RuleCategory } from "@/lib/phonetics";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ type InputSectionProps = {
   onExampleClick: (text: string) => void;
 };
 
-const UnderlineColors: Record<string, string> = {
+const UnderlineColors: Record<RuleCategory, string> = {
     vowel: "border-blue-500",
     nasal: "border-amber-500",
     special: "border-purple-500",
@@ -24,23 +24,18 @@ const UnderlineColors: Record<string, string> = {
     silent: "border-gray-500 border-dashed",
 };
 
-const getUnderlineForWord = (word: string) => {
+const getRuleForWord = (word: string): Rule | undefined => {
     const lw = word.toLowerCase();
-    const rule = RULES.find(r => r.re.test(lw));
-    if (!rule) return "";
-
-    if (["softC", "softG", "sBetween", "jToZh", "quToK", "cedilla", "ill", "yGlide", "sh"].includes(rule.key)) return UnderlineColors.special;
-    if (["nasAL", "nasON", "nasIN", "nasUN"].includes(rule.key)) return UnderlineColors.nasal;
-    if (["ou", "oi", "au", "eu"].includes(rule.key)) return UnderlineColors.vowel;
-    if (rule.key === 'finalE') return UnderlineColors.silent;
-    if (rule.key === 'hSilent') return UnderlineColors.liaison;
-    return "";
-}
-
-const getRuleLabel = (word: string) => {
-    const lw = word.toLowerCase();
-    const rule = RULES.find(r => r.re.test(lw));
-    return rule?.label;
+    // Prioritize longer matches first
+    const sortedRules = [...RULES].sort((a,b) => {
+        const aMatch = lw.match(a.re);
+        const bMatch = lw.match(b.re);
+        if (aMatch && bMatch) return bMatch[0].length - aMatch[0].length;
+        if (aMatch) return -1;
+        if (bMatch) return 1;
+        return 0;
+    });
+    return sortedRules.find(r => r.re.test(lw));
 }
 
 
@@ -57,15 +52,16 @@ export function InputSection({
   const renderTextWithUnderlines = (inputText: string) => {
     return inputText.split(/(\s+)/).map((word, i) => {
         if (!word.trim()) return <span key={i}>{word}</span>;
-        const underlineClass = getUnderlineForWord(word);
-        const ruleLabel = getRuleLabel(word);
+        const rule = getRuleForWord(word);
+        const underlineClass = rule ? UnderlineColors[rule.category] : 'border-transparent';
+
         return (
              <TooltipProvider key={i}>
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
-                        <span className={`border-b-2 ${underlineClass || 'border-transparent'}`}>{word}</span>
+                        <span className={`border-b-2 ${underlineClass}`}>{word}</span>
                     </TooltipTrigger>
-                    {ruleLabel && <TooltipContent><p>{ruleLabel}</p></TooltipContent>}
+                    {rule && <TooltipContent><p>{rule.label}</p></TooltipContent>}
                 </Tooltip>
             </TooltipProvider>
         )

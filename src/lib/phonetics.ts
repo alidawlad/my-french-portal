@@ -1,5 +1,6 @@
 export type Token = string;
 export type SepKind = 'hyphen' | 'middot' | 'space' | 'none';
+export type RuleCategory = 'vowel' | 'nasal' | 'special' | 'liaison' | 'silent';
 
 export const LETTERS: Array<{ ch: string; nameIPA: string; ali: string; alt?: string; note?: string }> = [
   { ch: "A", nameIPA: "[a]", ali: "aah" },
@@ -34,27 +35,29 @@ export type Rule = {
     key: string;
     label: string;
     re: RegExp;
+    category: RuleCategory;
 };
 
 export const RULES: Rule[] = [
-  { key: 'softC',  label: "c before e/i/y → S (soft c)",          re: /c(?=[eéiïy])/i },
-  { key: 'softG',  label: "g before e/i/y → ZH (soft g)",          re: /g(?=[eéiïy])/i },
-  { key: 'ou',     label: "ou → OO",                               re: /ou/i },
-  { key: 'oi',     label: "oi → WA",                               re: /oi/i },
-  { key: 'au',     label: "au/eau → OH",                           re: /(au|eau)/i },
-  { key: 'eu',     label: "eu/œu → EU (ö‑like)",                   re: /(eu|œu)/i },
-  { key: 'nasAL',  label: "an/en/am/em → nasal (AH˜)",             re: /(an|am|en|em)/i },
-  { key: 'nasON',  label: "on/om → nasal (OH˜)",                   re: /(on|om)/i },
-  { key: 'nasIN',  label: "in/im/ain/ein/yn/ym → nasal (EH˜)",     re: /(in|im|ain|ein|yn|ym)/i },
-  { key: 'nasUN',  label: "un/um → nasal (UH˜)",                   re: /(un|um)/i },
-  { key: 'sBetween',label: "s between vowels → Z",                 re: /[aeiouyàâäéèêëîïôöùûüœ]s(?=[aeiouyàâäéèêëîïôöùûüœ])/i },
-  { key: 'ill',    label: "vowel + ill → Y (fille)",               re: /[aeiouy]ill/i },
-  { key: 'finalE', label: "final -e often silent (schwa)",         re: /e$/i },
-  { key: "hSilent",label: "h is silent (may block liaison)",       re: /h/i },
-  { key: 'yGlide', label: "y before vowel → glide /j/",            re: /y(?=[aeiouyàâäéèêëîïôöùûüœ])/i },
-  { key: 'jToZh',  label: "j → ZH",                                re: /j/i },
-  { key: 'quToK',  label: "qu → K",                                re: /qu/i },
-  { key: 'cedilla',label: "ç → S",                                 re: /ç/i },
+  { key: 'softC',  label: "c before e/i/y → S (soft c)",          re: /c(?=[eéiïy])/i, category: 'special' },
+  { key: 'softG',  label: "g before e/i/y → ZH (soft g)",          re: /g(?=[eéiïy])/i, category: 'special' },
+  { key: 'ou',     label: "ou → OO",                               re: /ou/i, category: 'vowel' },
+  { key: 'oi',     label: "oi → WA",                               re: /oi/i, category: 'vowel' },
+  { key: 'au',     label: "au/eau → OH",                           re: /(au|eau)/i, category: 'vowel' },
+  { key: 'eu',     label: "eu/œu → EU (ö‑like)",                   re: /(eu|œu)/i, category: 'vowel' },
+  { key: 'nasAL',  label: "an/en/am/em → nasal (AH˜)",             re: /(an|am|en|em)(?=$|[^a-zàâäéèêëîïôöùûüœ]|[bcdfghjklmnpqrstvwxz])/i, category: 'nasal' },
+  { key: 'nasON',  label: "on/om → nasal (OH˜)",                   re: /(on|om)(?=$|[^a-zàâäéèêëîïôöùûüœ]|[bcdfghjklmnpqrstvwxz])/i, category: 'nasal' },
+  { key: 'nasIN',  label: "in/im/ain/ein/yn/ym → nasal (EH˜)",     re: /(in|im|ain|ein|yn|ym)(?=$|[^a-zàâäéèêëîïôöùûüœ]|[bcdfghjklmnpqrstvwxz])/i, category: 'nasal' },
+  { key: 'nasUN',  label: "un/um → nasal (UH˜)",                   re: /(un|um)(?=$|[^a-zàâäéèêëîïôöùûüœ]|[bcdfghjklmnpqrstvwxz])/i, category: 'nasal' },
+  { key: 'sBetween',label: "s between vowels → Z",                 re: /[aeiouyàâäéèêëîïôöùûüœ]s(?=[aeiouyàâäéèêëîïôöùûüœ])/i, category: 'special' },
+  { key: 'ill',    label: "vowel + ill → Y (fille)",               re: /[aeiouy]ill/i, category: 'special' },
+  { key: 'finalE', label: "final -e often silent (schwa)",         re: /e$/i, category: 'silent' },
+  { key: "hSilent",label: "h is silent (may block liaison)",       re: /^h/i, category: 'liaison' },
+  { key: 'yGlide', label: "y before vowel → glide /j/",            re: /y(?=[aeiouyàâäéèêëîïôöùûüœ])/i, category: 'special' },
+  { key: 'jToZh',  label: "j → ZH",                                re: /j/i, category: 'special' },
+  { key: 'quToK',  label: "qu → K",                                re: /qu/i, category: 'special' },
+  { key: 'cedilla',label: "ç → S",                                 re: /ç/i, category: 'special' },
+  { key: 'finalC', label: "Final consonant usually silent",        re: /[b|d|g|p|s|t|x|z]$/i, category: 'silent'},
 ];
 
 export const Examples: Array<{ label: string; text: string }> = [
@@ -80,10 +83,18 @@ export const smokeTests = [
     "chien",
     "queue",
     "poisson",
+    "amis",
+    "froid",
 ];
 
 
 export const SEP_MAP: Record<SepKind, string> = { hyphen: "\u2011", middot: "·", space: " ", none: "" };
+
+// Based on the "CaReFuL" rule. Final C, R, F, L are often pronounced.
+const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l', 'q'];
+// Exceptions to the silent final consonant rule.
+const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'sud']);
+
 
 export const toArabic = (t: Token): string => {
   switch (t) {
@@ -153,49 +164,60 @@ export const toEN = (t: Token): string => {
 };
 
 const isVowel = (c: string) => /[aeiouyàâäéèêëîïôöùûüœ]/i.test(c);
+const isNasalBlocker = (c: string) => /[bcdfghjklmnpqrstvwxz]/.test(c);
 
 export const transformWord = (wordRaw: string): Token[] => {
   let w = wordRaw.normalize("NFC");
   if (!/[\p{L}]/u.test(w)) return [w as Token];
-  w = w.toLowerCase();
+  let lw = w.toLowerCase();
 
-  w = w.replace(/ç/g, "{S}");
-  w = w.replace(/œu/g, "{EU}");
-  w = w.replace(/eau/g, "{OH}");
-  w = w.replace(/au/g, "{OH}");
-  w = w.replace(/oi/g, "{WA}");
-  w = w.replace(/ou/g, "{OO}");
+  // Nasal Pass: must happen before other vowel transformations
+  const nasalRegex = /(in|im|yn|ym|ain|ein|an|am|en|em|on|om|un|um)(?=$|[^a-zàâäéèêëîïôöùûüœ])/ig;
+  lw = lw.replace(nasalRegex, (match) => {
+    const m = match.toLowerCase();
+    if (m.startsWith('o')) return '{ON_NAS}';
+    if (m.startsWith('u')) return '{UN_NAS}';
+    if (['en', 'an', 'am', 'em'].includes(m)) return '{AN_NAS}';
+    return '{IN_NAS}';
+  });
 
-  w = w.replace(/(ain|ein|ien)(?=\b|[^a-z])/g, "{IN_NAS}");
-  w = w.replace(/([aeiouy])ill/g, "$1{Y_GLIDE}");
-  w = w.replace(/(an|am|en|em)(?=\b|[^a-z])/g, "{AN_NAS}");
-  w = w.replace(/(on|om)(?=\b|[^a-z])/g, "{ON_NAS}");
-  w = w.replace(/(in|im|yn|ym|ain|ein)(?=\b|[^a-z])/g, "{IN_NAS}");
-  w = w.replace(/(un|um)(?=\b|[^a-z])/g, "{UN_NAS}");
 
-  w = w.replace(/ch/g, "{SH}");
-  w = w.replace(/gn/g, "{NY}");
-  w = w.replace(/j/g, "{ZH}");
-  w = w.replace(/g(?=[eéiïy])/g, "{ZH}");
-  w = w.replace(/c(?=[eéiïy])/g, "{S}");
-  w = w.replace(/qu/g, "{K}");
-  w = w.replace(/h/g, "");
+  // Digraphs & Trigraphs Pass
+  lw = lw.replace(/ç/g, "{S}");
+  lw = lw.replace(/œu/g, "{EU}");
+  lw = lw.replace(/eau/g, "{OH}");
+  lw = lw.replace(/au/g, "{OH}");
+  lw = lw.replace(/oi/g, "{WA}");
+  lw = lw.replace(/ou/g, "{OO}");
 
-  w = w.replace(/[é]/g, "{AY}");
-  w = w.replace(/[èê]/g, "{EH}");
-  w = w.replace(/[àâ]/g, "{AH}");
-  w = w.replace(/[îï]/g, "{EE}");
-  w = w.replace(/[ô]/g, "{OH}");
+  // Consonant clusters & special consonants
+  lw = lw.replace(/ch/g, "{SH}");
+  lw = lw.replace(/gn/g, "{NY}");
+  lw = lw.replace(/j/g, "{ZH}");
+  lw = lw.replace(/g(?=[eéiïy])/g, "{ZH}");
+  lw = lw.replace(/c(?=[eéiïy])/g, "{S}");
+  lw = lw.replace(/qu/g, "{K}");
+  lw = lw.replace(/^h/g, ""); // Only initial 'h' is silent for liaison purposes.
+  lw = lw.replace(/th/g, "{T}");
+
+  // Accented vowels
+  lw = lw.replace(/[é]/g, "{AY}");
+  lw = lw.replace(/[èêë]/g, "{EH}");
+  lw = lw.replace(/[àâä]/g, "{AH}");
+  lw = lw.replace(/[îï]/g, "{EE}");
+  lw = lw.replace(/[ôö]/g, "{OH}");
+  lw = lw.replace(/[ùûü]/g, "{Ü}");
+
 
   const tokens: Token[] = [];
-  for (let i = 0; i < w.length; i++) {
-    const ch = w[i];
-    const prev = w[i - 1];
-    const next = w[i + 1];
+  for (let i = 0; i < lw.length; i++) {
+    const ch = lw[i];
+    const prev = lw[i - 1];
+    const next = lw[i + 1];
 
-    if (w.startsWith("{", i)) {
-      const end = w.indexOf("}", i);
-      const tag = w.slice(i + 1, end);
+    if (lw.startsWith("{", i)) {
+      const end = lw.indexOf("}", i);
+      const tag = lw.slice(i + 1, end);
       switch (tag) {
         case "OH": tokens.push("OH"); break;
         case "OO": tokens.push("OO"); break;
@@ -215,17 +237,29 @@ export const transformWord = (wordRaw: string): Token[] => {
         case "EH": tokens.push("EH"); break;
         case "AH": tokens.push("AH"); break;
         case "EE": tokens.push("EE"); break;
+        case "T": tokens.push("T"); break;
+        case "Ü": tokens.push("Ü"); break;
         default: tokens.push(tag as Token);
       }
       i = end; continue;
     }
+
+    if (ch === 'h') continue; // Medial 'h' is silent
 
     if (ch === "u") { tokens.push("Ü"); continue; }
     if (ch === "a") { tokens.push("AH"); continue; }
     if (ch === "y") { const nextIsVowel = isVowel(next || ""); tokens.push(nextIsVowel ? "Y" : "EE"); continue; }
     if (ch === "i") { tokens.push("EE"); continue; }
     if (ch === "o") { tokens.push("OH"); continue; }
-    if (ch === "e") { tokens.push("UH"); continue; }
+    if (ch === "e") {
+      // final -es is silent, final -e is silent, otherwise 'uh'
+      if (next === 's' && (lw[i+2] === undefined)) {
+         i++; continue;
+      }
+      if (next === undefined) continue;
+      tokens.push("UH"); continue;
+    }
+
 
     if (ch === "s") {
       const betweenVowels = isVowel(prev || "") && isVowel(next || "");
@@ -238,9 +272,23 @@ export const transformWord = (wordRaw: string): Token[] => {
     tokens.push(ch.toUpperCase() as Token);
   }
 
-  if (tokens.length > 1 && tokens[tokens.length - 1] === "UH" && wordRaw.endsWith('e')) {
-      tokens.pop();
+  // Final Pass: Clean up based on word-level context
+  if (tokens.length > 1) {
+    const lastToken = tokens[tokens.length - 1];
+    const lastLetter = lw[lw.length - 1];
+    const secondLastLetter = lw[lw.length-2];
+
+    // Final consonant rule
+    if (FINAL_CONSONANT_EXCEPTIONS.has(lw)) {
+        // keep final consonant sound
+    } else if (PRONOUNCED_FINALS.includes(lastLetter)) {
+        // keep final consonant sound (CaReFuL rule)
+    } else if (lastToken.length === 1 && /[BDGPSXTZ]/.test(lastToken)) {
+        tokens.pop();
+    }
   }
+
+
   return tokens;
 };
 
