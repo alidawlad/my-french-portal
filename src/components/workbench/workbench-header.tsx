@@ -1,3 +1,4 @@
+
 // src/components/workbench/workbench-header.tsx
 "use client";
 
@@ -13,7 +14,6 @@ type WorkbenchHeaderProps = {
   onShowArabicChange: (checked: boolean) => void;
   separator: SepKind;
   onSeparatorChange: (kind: SepKind) => void;
-  onLoadExamples: () => void;
 };
 
 export function WorkbenchHeader({

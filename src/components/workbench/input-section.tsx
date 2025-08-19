@@ -54,8 +54,6 @@ export function InputSection({
   onTextChange,
   lines,
   showArabic,
-  examples,
-  onExampleClick,
   onSaveWord,
   isSaving,
 }: InputSectionProps) {
@@ -159,18 +157,6 @@ export function InputSection({
             className="mt-1 resize-y bg-card text-lg"
             placeholder="Type or paste French text here..."
           />
-           <div className="flex flex-wrap gap-2 pt-2">
-            {examples.map((ex) => (
-              <Badge
-                key={ex.label}
-                onClick={() => onExampleClick(ex.text)}
-                className="cursor-pointer select-none"
-                variant="secondary"
-              >
-                {ex.label}
-              </Badge>
-            ))}
-          </div>
         </div>
         <div className="space-y-2">
             <Label htmlFor="user-meaning">Your English meaning (optional)</Label>

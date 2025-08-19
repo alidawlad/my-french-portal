@@ -64,25 +64,25 @@ export async function getEnglishMeaning(text: string): Promise<{meaning: string}
   }
 }
 
+// This no longer fetches definitions automatically.
 export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp' | 'frenchDefinition' | 'englishDefinition'>): Promise<SavedWord> {
     if (!wordData.fr_line.trim()) {
         throw new Error("Cannot save an empty word.");
     }
     try {
-        // 1. Get definitions from the dictionary flow
-        const definitions = await getDictionaryEntry({ word: wordData.fr_line });
+        const definitions = {
+            frenchDefinition: "",
+            englishDefinition: "",
+        };
 
-        // 2. Add timestamp and definitions
         const newWord: Omit<SavedWord, 'id'> = {
             ...wordData,
             ...definitions,
             timestamp: new Date(),
         };
 
-        // 3. Save to Firestore
         const docRef = await addDoc(collection(db, "rulebook"), newWord);
 
-        // 4. Return the complete object with the new ID
         return {
             id: docRef.id,
             ...newWord
@@ -92,6 +92,7 @@ export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'times
         throw new Error("Failed to save word to the Rule Book.");
     }
 }
+
 
 export async function getRuleBookWords(): Promise<SavedWord[]> {
     try {
@@ -105,16 +106,14 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
                 fr_line: data.fr_line,
                 en_line: data.en_line,
                 ali_respell: data.ali_respell,
-                frenchDefinition: data.frenchDefinition,
-                englishDefinition: data.englishDefinition,
+                frenchDefinition: data.frenchDefinition || "", // Ensure fields exist
+                englishDefinition: data.englishDefinition || "", // Ensure fields exist
                 timestamp: data.timestamp.toDate(),
             });
         });
         return words;
     } catch (error) {
         console.error("Error fetching Rule Book words:", error);
-        // Return an empty array on error so the app doesn't crash.
-        // A more robust implementation could involve specific error handling.
         return [];
     }
 }
@@ -125,5 +124,19 @@ export async function deleteWordFromRuleBook(wordId: string): Promise<void> {
     } catch (error) {
         console.error("Error deleting word from Rule Book:", error);
         throw new Error("Failed to delete word from the Rule Book.");
+    }
+}
+
+// New function to get definitions on demand
+export async function getDefinitionsForWord(word: string): Promise<DictionaryOutput> {
+    if (!word.trim()) {
+        return { frenchDefinition: "", englishDefinition: "" };
+    }
+    try {
+        const result = await getDictionaryEntry({ word });
+        return result;
+    } catch (error) {
+        console.error("Error fetching definitions:", error);
+        throw new Error("Failed to get definitions from the AI model.");
     }
 }

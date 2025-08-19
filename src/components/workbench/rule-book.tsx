@@ -5,10 +5,10 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getRuleAssistantResponse } from "@/app/actions";
+import { getRuleAssistantResponse, getDefinitionsForWord } from "@/app/actions";
 import type { RuleAssistantInput } from "@/ai/flows/rule-assistant-flow";
 import { useToast } from "@/hooks/use-toast";
-import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown } from "lucide-react";
+import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, BookOpen } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
@@ -51,7 +51,7 @@ export function RuleBook({ savedWords, onDeleteWord }: RuleBookProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-4">
       {savedWords.map((word) => (
         <SavedWordCard key={word.id} word={word} onDeleteWord={onDeleteWord} />
       ))}
@@ -60,15 +60,15 @@ export function RuleBook({ savedWords, onDeleteWord }: RuleBookProps) {
 }
 
 
-function SavedWordCard({ word, onDeleteWord }: { word: SavedWord; onDeleteWord: (id: string) => void }) {
-  const [loading, setLoading] = useState<string | null>(null); // Stores "type"
+function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; onDeleteWord: (id: string) => void }) {
+  const [word, setWord] = useState(initialWord);
+  const [loading, setLoading] = useState<string | null>(null); // Stores "type" or "definitions"
   const [responses, setResponses] = useState<Record<string, AIResponse>>({});
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   const handleAiQuery = async (type: RuleAssistantInput['type']) => {
     setLoading(type);
-
     try {
       const result = await getRuleAssistantResponse({
         text: word.fr_line,
@@ -79,13 +79,23 @@ function SavedWordCard({ word, onDeleteWord }: { word: SavedWord; onDeleteWord: 
       setResponses(prev => ({ ...prev, [type]: parsedExplanation }));
     } catch (error) {
       console.error(error);
-      toast({
-        variant: "destructive",
-        title: "AI Error",
-        description: "Could not get an explanation from the AI.",
-      });
+      toast({ variant: "destructive", title: "AI Error", description: "Could not get an explanation." });
     } finally {
       setLoading(null);
+    }
+  };
+
+  const handleFetchDefinitions = async () => {
+    if (word.frenchDefinition && word.englishDefinition) return; // Don't re-fetch
+    setLoading('definitions');
+    try {
+        const definitions = await getDefinitionsForWord(word.fr_line);
+        setWord(prev => ({ ...prev, ...definitions }));
+    } catch (error) {
+        console.error(error);
+        toast({ variant: "destructive", title: "AI Error", description: "Could not fetch definitions." });
+    } finally {
+        setLoading(null);
     }
   };
 
@@ -113,62 +123,69 @@ function SavedWordCard({ word, onDeleteWord }: { word: SavedWord; onDeleteWord: 
   const handleDelete = async () => {
     setIsDeleting(true);
     await onDeleteWord(word.id);
-    // No need to set isDeleting to false as the component will unmount
   };
 
   return (
     <Card className="flex flex-col">
       <CardHeader>
-        <CardTitle className="font-headline text-lg">{word.fr_line}</CardTitle>
-        {word.en_line && <CardDescription>Your meaning: "{word.en_line}"</CardDescription>}
+        <div className="flex justify-between items-start">
+            <div>
+                <CardTitle className="font-headline text-lg">{word.fr_line}</CardTitle>
+                {word.en_line && <CardDescription>Your meaning: "{word.en_line}"</CardDescription>}
+            </div>
+             <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-8 w-8 flex-shrink-0" disabled={isDeleting}>
+                        {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                            Yes, delete it
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4 flex-grow">
           <div>
             <Badge variant="secondary">Ali Respell</Badge>
             <p className="text-md tracking-wide font-medium text-muted-foreground mt-1">{word.ali_respell}</p>
           </div>
-          <div>
-            <Badge variant="secondary">Dictionary</Badge>
-             <div className="text-sm space-y-1 text-foreground/80 mt-1">
-                <p><strong className="font-medium text-foreground/90">EN:</strong> {word.englishDefinition}</p>
-                <p><strong className="font-medium text-foreground/90">FR:</strong> {word.frenchDefinition}</p>
+          {(word.frenchDefinition || word.englishDefinition) && (
+            <div>
+                <Badge variant="secondary">Dictionary</Badge>
+                 <div className="text-sm space-y-1 text-foreground/80 mt-1">
+                    {word.englishDefinition && <p><strong className="font-medium text-foreground/90">EN:</strong> {word.englishDefinition}</p>}
+                    {word.frenchDefinition && <p><strong className="font-medium text-foreground/90">FR:</strong> {word.frenchDefinition}</p>}
+                </div>
             </div>
-          </div>
+          )}
       </CardContent>
       <CardFooter>
         <Collapsible className="w-full space-y-2">
-          <div className="flex items-center justify-between">
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <BrainCircuit className="h-4 w-4 mr-2" />
-                  AI Coach
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </CollapsibleTrigger>
-               <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-8 w-8" disabled={isDeleting}>
-                          {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
-                      </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                      <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                              This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
-                          </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-                              Yes, delete it
-                          </AlertDialogAction>
-                      </AlertDialogFooter>
-                  </AlertDialogContent>
-              </AlertDialog>
-          </div>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <BrainCircuit className="h-4 w-4 mr-2" />
+              AI Coach
+              <ChevronDown className="h-4 w-4 ml-2" />
+            </Button>
+          </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 pt-2">
             <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={handleFetchDefinitions} disabled={!!loading} className="text-xs h-7">
+                    {loading === 'definitions' ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <BookOpen className="mr-2 h-3 w-3" />}
+                    Get Definitions
+                </Button>
                 {(['explain_phonetics', 'explain_grammar', 'find_similar'] as const).map(type => {
                   const isLoading = loading === type;
                   return (
@@ -180,9 +197,7 @@ function SavedWordCard({ word, onDeleteWord }: { word: SavedWord; onDeleteWord: 
                       disabled={!!loading || !!responses[type]}
                       className="text-xs h-7"
                     >
-                      {isLoading ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      ) : (
+                      {isLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : (
                         <>
                           {type === 'explain_phonetics' && <MessageSquareQuote className="mr-2 h-3 w-3" />}
                           {type === 'explain_grammar' && <BrainCircuit className="mr-2 h-3 w-3" />}

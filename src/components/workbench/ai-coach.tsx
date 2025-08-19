@@ -1,3 +1,4 @@
+
 // src/components/workbench/ai-coach.tsx
 "use client";
 
