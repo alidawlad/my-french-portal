@@ -56,7 +56,8 @@ const textToSpeechFlow = ai.defineFlow(
                 responseModalities: ['AUDIO'],
                 speechConfig: {
                     voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: 'Polymnia' }, // A French voice
+                        // Using a French-appropriate voice
+                        prebuiltVoiceConfig: { voiceName: 'Polymnia' },
                     },
                 },
             },

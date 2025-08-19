@@ -1,3 +1,4 @@
+// src/app/actions.ts
 'use server';
 
 import { suggestPhoneticCorrections, type SuggestPhoneticCorrectionsOutput } from '@/ai/flows/suggest-phonetic-corrections';
@@ -39,7 +40,7 @@ export async function getAudioForText(input: TextToSpeechInput): Promise<TextToS
     return result;
   } catch (error) {
     console.error("Error fetching audio for text:", error);
-    // Don't throw an error, just return empty audio and let the client handle it.
-    return { audio: "" };
+    // Re-throwing the error to get more detailed logs on the client for debugging.
+    throw new Error("Failed to get audio from the AI model.");
   }
 }
