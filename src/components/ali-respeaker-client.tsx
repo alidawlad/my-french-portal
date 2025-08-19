@@ -19,14 +19,9 @@ import { AiCoach } from "./workbench/ai-coach";
 import { RuleRadar } from "./workbench/rule-radar";
 
 export function AliRespeakerClient() {
-  const [text, setText] = useState("Thomas, William, Yasmine, Zohra\nLes amis arrivent.");
+  const [text, setText] = useState("Thomas");
   const [showArabic, setShowArabic] = useState(true);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const { lines, triggeredRules } = useMemo(() => {
     const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
@@ -63,14 +58,6 @@ export function AliRespeakerClient() {
       triggeredRules: Array.from(rulesTriggered.values()),
     };
   }, [text, separator]);
-
-  if (!isClient) {
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
-            <div className="text-muted-foreground">Loading Workbench...</div>
-        </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body">
