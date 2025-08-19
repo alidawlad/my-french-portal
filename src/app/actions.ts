@@ -51,7 +51,7 @@ export async function getAudioForText(input: TextToSpeechInput): Promise<TextToS
   }
 }
 
-export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp'>): Promise<SavedWord> {
+export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp' | 'frenchDefinition' | 'englishDefinition'>): Promise<SavedWord> {
     if (!wordData.fr_line.trim()) {
         throw new Error("Cannot save an empty word.");
     }
@@ -92,6 +92,7 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
                 id: doc.id,
                 fr_line: data.fr_line,
                 en_line: data.en_line,
+                ali_respell: data.ali_respell,
                 frenchDefinition: data.frenchDefinition,
                 englishDefinition: data.englishDefinition,
                 timestamp: data.timestamp.toDate(),

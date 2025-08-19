@@ -14,7 +14,8 @@ import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loa
 export type SavedWord = {
   id: string;
   fr_line: string;
-  en_line: string;
+  en_line: string; // User-provided meaning
+  ali_respell: string; // Generated respelling
   frenchDefinition: string;
   englishDefinition: string;
   timestamp: Date;
@@ -136,13 +137,27 @@ export function RuleBook({ savedWords }: RuleBookProps) {
                 <AccordionTrigger>
                   <div className="text-left">
                     <p className="font-medium text-foreground">{word.fr_line}</p>
-                    <p className="text-sm text-muted-foreground tracking-wide">{word.en_line}</p>
+                    {word.en_line && <p className="text-sm text-muted-foreground">{word.en_line}</p>}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4">
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <h4 className="font-semibold text-sm mb-1">Ali Respell</h4>
+                            <p className="text-sm tracking-wide font-medium text-muted-foreground">{word.ali_respell}</p>
+                        </div>
+                        {word.en_line && (
+                        <div>
+                            <h4 className="font-semibold text-sm mb-1">Your Meaning</h4>
+                            <p className="text-sm text-foreground/80">{word.en_line}</p>
+                        </div>
+                        )}
+                    </div>
+                    
                     <div>
-                        <h4 className="font-semibold text-sm mb-1">Definitions</h4>
+                        <h4 className="font-semibold text-sm mb-1">Dictionary Definitions</h4>
                         <div className="text-sm space-y-1 text-foreground/80">
                             <p><strong className="font-medium text-foreground/90">EN:</strong> {word.englishDefinition}</p>
                             <p><strong className="font-medium text-foreground/90">FR:</strong> {word.frenchDefinition}</p>

@@ -33,11 +33,20 @@ export function AliRespeakerClient() {
   useEffect(() => {
     setIsClient(true);
     const fetchWords = async () => {
-        const words = await getRuleBookWords();
-        setSavedWords(words);
+        try {
+            const words = await getRuleBookWords();
+            setSavedWords(words);
+        } catch (error) {
+            console.error("Failed to fetch initial rule book words:", error);
+            toast({
+                variant: "destructive",
+                title: "Load Failed",
+                description: "Could not load your Rule Book from the database.",
+            });
+        }
     };
     fetchWords();
-  }, []);
+  }, [toast]);
 
   const { lines } = useMemo(() => {
     const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
@@ -60,14 +69,15 @@ export function AliRespeakerClient() {
     };
   }, [text, separator]);
 
-  const handleSaveWord = async () => {
+  const handleSaveWord = async (userMeaning: string) => {
     if (!text.trim() || isSaving) return;
     setIsSaving(true);
     
     try {
         const newWordData = {
             fr_line: text,
-            en_line: lines.en,
+            en_line: userMeaning, // User's custom meaning
+            ali_respell: lines.en, // The generated respelling
         };
         const newSavedWord = await saveWordToRuleBook(newWordData);
         setSavedWords(prev => [newSavedWord, ...prev]);
@@ -110,7 +120,7 @@ export function AliRespeakerClient() {
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <AiCoach text={text} />
-            <RuleBook savedWords={savedWords} />
+            {isClient && <RuleBook savedWords={savedWords} />}
         </div>
       </main>
     </div>

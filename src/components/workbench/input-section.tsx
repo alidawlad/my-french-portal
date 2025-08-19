@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Volume2, Loader2, Bookmark } from 'lucide-react';
 import { getAudioForText } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 type InputSectionProps = {
   text: string;
@@ -20,7 +22,7 @@ type InputSectionProps = {
   showArabic: boolean;
   examples: Array<{ label: string, text: string }>;
   onExampleClick: (text: string) => void;
-  onSaveWord: () => void;
+  onSaveWord: (userMeaning: string) => void;
   isSaving: boolean;
 };
 
@@ -58,6 +60,7 @@ export function InputSection({
   isSaving,
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [userMeaning, setUserMeaning] = useState("");
   const { toast } = useToast();
   const gridCols = showArabic ? "grid-cols-3" : "grid-cols-2";
 
@@ -112,6 +115,11 @@ export function InputSection({
     })
   }
 
+  const handleSave = () => {
+    onSaveWord(userMeaning);
+    setUserMeaning(""); // Clear input after saving
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -120,10 +128,6 @@ export function InputSection({
             <CardTitle className="font-headline text-xl">Workbench</CardTitle>
             <CardDescription>Type French text to see it respelled and analyzed.</CardDescription>
           </div>
-          <Button onClick={onSaveWord} disabled={!text.trim() || isSaving}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bookmark className="mr-2 h-4 w-4" />}
-            {isSaving ? "Saving..." : "Save to Rule Book"}
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -149,7 +153,20 @@ export function InputSection({
             ))}
           </div>
         </div>
-        <div className={`grid gap-4 ${gridCols}`}>
+        <div className="space-y-2">
+            <Label htmlFor="user-meaning">Your English meaning (optional)</Label>
+            <Input
+                id="user-meaning"
+                value={userMeaning}
+                onChange={(e) => setUserMeaning(e.target.value)}
+                placeholder="e.g., 'Hello, how are you?'"
+            />
+        </div>
+        <Button onClick={handleSave} disabled={!text.trim() || isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bookmark className="mr-2 h-4 w-4" />}
+            {isSaving ? "Saving..." : "Save to Rule Book"}
+        </Button>
+        <div className={`grid gap-4 ${gridCols} pt-4`}>
           <div className="rounded-lg border p-3 bg-background/50">
             <div className="text-xs font-semibold uppercase text-muted-foreground mb-1 flex justify-between items-center">
                 <span>FR-line (original)</span>
