@@ -71,12 +71,20 @@ export function InputSection({
           setIsPlaying(false);
         }
       } else {
-         toast({ variant: "destructive", title: "Error", description: "Could not generate audio." });
+         toast({ 
+            variant: "destructive", 
+            title: "Audio Generation Failed", 
+            description: "Could not generate audio. Please check your Gemini API key." 
+        });
          setIsPlaying(false);
       }
     } catch (error) {
       console.error(error);
-      toast({ variant: "destructive", title: "AI Error", description: "Failed to generate audio." });
+      toast({ 
+        variant: "destructive", 
+        title: "Audio Error", 
+        description: "An unexpected error occurred while trying to generate audio." 
+      });
       setIsPlaying(false);
     }
   };
