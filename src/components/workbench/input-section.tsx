@@ -9,7 +9,7 @@ import { transformWord, toEN, type Token, RULES, type Rule, type RuleCategory } 
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
-import { Volume2, Loader2 } from 'lucide-react';
+import { Volume2, Loader2, Bookmark } from 'lucide-react';
 import { getAudioForText } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,6 +20,7 @@ type InputSectionProps = {
   showArabic: boolean;
   examples: Array<{ label: string, text: string }>;
   onExampleClick: (text: string) => void;
+  onSaveWord: () => void;
 };
 
 const UnderlineColors: Record<RuleCategory, string> = {
@@ -52,6 +53,7 @@ export function InputSection({
   showArabic,
   examples,
   onExampleClick,
+  onSaveWord,
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
@@ -111,8 +113,16 @@ export function InputSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline text-xl">Workbench</CardTitle>
-        <CardDescription>Type French text to see it respelled and analyzed.</CardDescription>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="font-headline text-xl">Workbench</CardTitle>
+            <CardDescription>Type French text to see it respelled and analyzed.</CardDescription>
+          </div>
+          <Button onClick={onSaveWord} disabled={!text.trim()}>
+            <Bookmark className="mr-2 h-4 w-4" />
+            Save to Rule Book
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>

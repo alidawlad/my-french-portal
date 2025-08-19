@@ -1,7 +1,7 @@
 // src/components/ali-respeaker-client.tsx
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Examples,
   SepKind,
@@ -16,12 +16,13 @@ import {
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
 import { AiCoach } from "./workbench/ai-coach";
-import { RuleRadar } from "./workbench/rule-radar";
+import { RuleBook, type SavedWord } from "./workbench/rule-book";
 
 export function AliRespeakerClient() {
   const [text, setText] = useState("Thomas");
   const [showArabic, setShowArabic] = useState(true);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
+  const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
 
   const { lines, triggeredRules } = useMemo(() => {
     const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
@@ -59,6 +60,17 @@ export function AliRespeakerClient() {
     };
   }, [text, separator]);
 
+  const handleSaveWord = () => {
+    if (!text.trim()) return;
+    const newWord: SavedWord = {
+      id: Date.now().toString(),
+      fr_line: text,
+      en_line: lines.en,
+    };
+    setSavedWords(prev => [...prev, newWord]);
+  };
+
+
   return (
     <div className="min-h-screen bg-background text-foreground font-body">
       <WorkbenchHeader
@@ -82,11 +94,12 @@ export function AliRespeakerClient() {
                 showArabic={showArabic}
                 examples={Examples}
                 onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
+                onSaveWord={handleSaveWord}
             />
         </div>
 
         <aside className="hidden lg:block">
-          <RuleRadar triggeredRules={triggeredRules} />
+          <RuleBook savedWords={savedWords} />
         </aside>
       </main>
     </div>

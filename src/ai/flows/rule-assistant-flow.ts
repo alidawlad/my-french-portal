@@ -19,7 +19,7 @@ const RuleAssistantInputSchema = z.object({
 export type RuleAssistantInput = z.infer<typeof RuleAssistantInputSchema>;
 
 const RuleAssistantOutputSchema = z.object({
-  explanation: z.string().describe('The AI-generated explanation or list of similar words.'),
+  explanation: z.string().describe('The AI-generated explanation or list of similar words, formatted as a JSON string.'),
 });
 export type RuleAssistantOutput = z.infer<typeof RuleAssistantOutputSchema>;
 
@@ -31,14 +31,18 @@ const explainGrammarPrompt = ai.definePrompt({
     name: 'explainGrammarPrompt',
     input: {schema: RuleAssistantInputSchema},
     output: {schema: RuleAssistantOutputSchema},
-    prompt: `You are a friendly and concise French grammar tutor. The user has a question about the grammar of a specific word or phrase within a larger text.
+    prompt: `You are a friendly and concise French grammar tutor. The user has a question about the grammar of a specific word or phrase.
 
     User's full text: "{{text}}"
     User's query: "{{query}}"
 
-    Explain the grammatical rule or concept related to "{{query}}" in the context of the full text. Be clear, simple, and encouraging. If the query is a single word, explain its role (e.g., verb, noun, adjective, its agreement). If it's a phrase, explain the structure.
-
-    Your response should be formatted as a short paragraph.
+    Analyze the grammatical rule for "{{query}}" in context.
+    
+    Respond with a JSON object with two keys:
+    1. "summary": A one-sentence summary of the rule.
+    2. "details": A brief, one-paragraph explanation.
+    
+    Example: { "summary": "It's a plural adjective agreeing with the noun.", "details": "The word 'bleus' agrees in number (plural) and gender (masculine) with the noun 'yeux'." }
     `,
 });
 
@@ -51,9 +55,13 @@ const explainPhoneticsPrompt = ai.definePrompt({
     User's full text: "{{text}}"
     User's query: "{{query}}"
 
-    Explain the phonetic rule related to "{{query}}". For example, why a letter is silent, how a vowel combination is pronounced, or if liaison occurs. Be clear, simple, and use the "Ali Respell" style for examples where helpful (e.g., 'oi' is 'wa').
-
-    Your response should be a short, helpful paragraph.
+    Analyze the key phonetic rule for "{{query}}".
+    
+    Respond with a JSON object with two keys:
+    1. "summary": A one-sentence summary of the phonetic event.
+    2. "details": A brief explanation, using Ali Respell style for examples (e.g., 'oi' is 'wa').
+    
+    Example: { "summary": "The 's' is silent at the end of 'Thomas'.", "details": "In French, final consonants like 's' are often silent. So, 'Thomas' is pronounced 'to-ma'." }
     `,
 });
 
@@ -61,13 +69,17 @@ const findSimilarPrompt = ai.definePrompt({
     name: 'findSimilarPrompt',
     input: {schema: RuleAssistantInputSchema},
     output: {schema: RuleAssistantOutputSchema},
-    prompt: `You are a helpful French vocabulary assistant. The user wants to see words that are similar to a specific word or phrase.
+    prompt: `You are a helpful French vocabulary assistant. The user wants to see words that are phonetically or grammatically similar to a specific word or phrase.
 
     User's query: "{{query}}"
 
-    Find 3-5 other French words that follow the same grammatical or phonetic pattern as "{{query}}". For example, if the word is "maison" (ending in -aison), you could suggest "raison, saison". If the word is "mange" (a verb), you could suggest other -er verbs.
-
-    Present the list of words clearly. You can add a one-sentence explanation of the pattern they share.
+    Find 3-5 other French words that follow the same key pattern as "{{query}}".
+    
+    Respond with a JSON object with two keys:
+    1. "pattern": A one-sentence description of the shared pattern.
+    2. "words": An array of the similar words.
+    
+    Example: { "pattern": "Words with a silent final 's'.", "words": ["Paris", "français", "trois", "temps"] }
     `,
 });
 
