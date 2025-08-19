@@ -2,6 +2,7 @@
 
 import { suggestPhoneticCorrections, type SuggestPhoneticCorrectionsOutput } from '@/ai/flows/suggest-phonetic-corrections';
 import { ruleAssistant, type RuleAssistantInput, type RuleAssistantOutput } from '@/ai/flows/rule-assistant-flow';
+import { textToSpeech, type TextToSpeechInput, type TextToSpeechOutput } from '@/ai/flows/text-to-speech-flow';
 
 export async function getPhoneticSuggestions(text: string): Promise<SuggestPhoneticCorrectionsOutput> {
   if (!text.trim()) {
@@ -26,5 +27,18 @@ export async function getRuleAssistantResponse(input: RuleAssistantInput): Promi
   } catch (error) {
     console.error("Error fetching rule assistant response:", error);
     throw new Error("Failed to get a response from the AI model.");
+  }
+}
+
+export async function getAudioForText(input: TextToSpeechInput): Promise<TextToSpeechOutput> {
+  if (!input.trim()) {
+    return { audio: "" };
+  }
+  try {
+    const result = await textToSpeech(input);
+    return result;
+  } catch (error) {
+    console.error("Error fetching audio for text:", error);
+    throw new Error("Failed to get audio from the AI model.");
   }
 }

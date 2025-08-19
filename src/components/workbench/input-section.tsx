@@ -1,11 +1,17 @@
+// src/components/workbench/input-section.tsx
 "use client";
 
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { transformWord, toEN, type Token, RULES, type Rule, type RuleCategory } from "@/lib/phonetics";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Volume2, Loader2 } from 'lucide-react';
+import { getAudioForText } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 type InputSectionProps = {
   text: string;
@@ -47,7 +53,33 @@ export function InputSection({
   examples,
   onExampleClick,
 }: InputSectionProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const { toast } = useToast();
   const gridCols = showArabic ? "grid-cols-3" : "grid-cols-2";
+
+  const handlePlayAudio = async () => {
+    if (!text.trim()) return;
+    setIsPlaying(true);
+    try {
+      const { audio: audioDataUri } = await getAudioForText(text);
+      if (audioDataUri) {
+        const audio = new Audio(audioDataUri);
+        audio.play();
+        audio.onended = () => setIsPlaying(false);
+        audio.onerror = () => {
+          toast({ variant: "destructive", title: "Error", description: "Could not play audio." });
+          setIsPlaying(false);
+        }
+      } else {
+         toast({ variant: "destructive", title: "Error", description: "Could not generate audio." });
+         setIsPlaying(false);
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "AI Error", description: "Failed to generate audio." });
+      setIsPlaying(false);
+    }
+  };
 
   const renderTextWithUnderlines = (inputText: string) => {
     return inputText.split(/(\s+)/).map((word, i) => {
@@ -99,7 +131,12 @@ export function InputSection({
         </div>
         <div className={`grid gap-4 ${gridCols}`}>
           <div className="rounded-lg border p-3 bg-background/50">
-            <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">FR-line (original)</div>
+            <div className="text-xs font-semibold uppercase text-muted-foreground mb-1 flex justify-between items-center">
+                <span>FR-line (original)</span>
+                <Button variant="ghost" size="icon" onClick={handlePlayAudio} disabled={isPlaying || !text.trim()} className="h-6 w-6">
+                    {isPlaying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Volume2 className="h-4 w-4" />}
+                </Button>
+            </div>
             <div className="min-h-[40px] whitespace-pre-wrap break-words text-lg font-medium">
                 {renderTextWithUnderlines(text)}
             </div>
