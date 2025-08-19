@@ -93,7 +93,7 @@ export const SEP_MAP: Record<SepKind, string> = { hyphen: "\u2011", middot: "·"
 // Based on the "CaReFuL" rule. Final C, R, F, L are often pronounced.
 const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l', 'q'];
 // Exceptions to the silent final consonant rule.
-const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'sud']);
+const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'sud', 'anaïs', 'reims']);
 
 
 export const toArabic = (t: Token): string => {
@@ -275,13 +275,13 @@ export const transformWord = (wordRaw: string): Token[] => {
   // Final Pass: Clean up based on word-level context
   if (tokens.length > 1) {
     const lastToken = tokens[tokens.length - 1];
-    const lastLetter = lw[lw.length - 1];
-    const secondLastLetter = lw[lw.length-2];
+    const originalLastLetter = w.toLowerCase()[w.length - 1];
+    const originalWord = w.toLowerCase();
 
     // Final consonant rule
-    if (FINAL_CONSONANT_EXCEPTIONS.has(lw)) {
+    if (FINAL_CONSONANT_EXCEPTIONS.has(originalWord)) {
         // keep final consonant sound
-    } else if (PRONOUNCED_FINALS.includes(lastLetter)) {
+    } else if (PRONOUNCED_FINALS.includes(originalLastLetter)) {
         // keep final consonant sound (CaReFuL rule)
     } else if (lastToken.length === 1 && /[BDGPSXTZ]/.test(lastToken)) {
         tokens.pop();
@@ -296,3 +296,5 @@ export const joinTokensEnWith = (tokens: Token[], sep: string) => tokens.map(toE
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
+
+    
