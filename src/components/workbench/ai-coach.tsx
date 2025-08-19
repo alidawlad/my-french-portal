@@ -1,7 +1,7 @@
 // src/components/workbench/ai-coach.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getRuleAssistantResponse } from "@/app/actions";
 import type { RuleAssistantInput } from "@/ai/flows/rule-assistant-flow";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,11 @@ export function AiCoach({ text }: AiCoachProps) {
   const [lastQuery, setLastQuery] = useState<{query: string, type: RuleAssistantInput['type'] } | null>(null);
   const [response, setResponse] = useState<string | null>(null);
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleQuery = async (type: RuleAssistantInput['type']) => {
     // For now, we'll use the whole text as the query.
@@ -58,6 +63,10 @@ export function AiCoach({ text }: AiCoachProps) {
       setLoading(false);
     }
   };
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <Card className="sticky top-24">
