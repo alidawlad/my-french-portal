@@ -3,7 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import type { Example } from '@/lib/phonetics';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PhoneticExceptionSuggester } from "./phonetic-exception-suggester";
+import { RuleAssistant } from "./rule-assistant";
 
 type InputSectionProps = {
   text: string;
@@ -42,6 +44,18 @@ export function InputSection({
             className="mt-1 resize-y bg-card"
             placeholder="Tapez ici…"
           />
+           <div className="flex flex-wrap gap-2 pt-2">
+            {examples.map((ex) => (
+              <Badge
+                key={ex.label}
+                onClick={() => onExampleClick(ex.text)}
+                className="cursor-pointer select-none"
+                variant="secondary"
+              >
+                {ex.label}
+              </Badge>
+            ))}
+          </div>
         </div>
         <div className={`grid gap-4 ${gridCols}`}>
           <div className="rounded-lg border p-4 bg-background">
@@ -59,18 +73,20 @@ export function InputSection({
             </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-2 pt-1">
-          {examples.map((ex) => (
-            <Badge
-              key={ex.label}
-              onClick={() => onExampleClick(ex.text)}
-              className="cursor-pointer select-none"
-              variant="secondary"
-            >
-              {ex.label}
-            </Badge>
-          ))}
-        </div>
+        
+        <Tabs defaultValue="suggester" className="w-full">
+          <TabsList>
+            <TabsTrigger value="suggester">AI Suggestions</TabsTrigger>
+            <TabsTrigger value="assistant">Rule Assistant</TabsTrigger>
+          </TabsList>
+          <TabsContent value="suggester">
+             <PhoneticExceptionSuggester text={text} />
+          </TabsContent>
+          <TabsContent value="assistant">
+            <RuleAssistant text={text} />
+          </TabsContent>
+        </Tabs>
+
       </CardContent>
     </Card>
   );

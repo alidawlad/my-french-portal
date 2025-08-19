@@ -4,10 +4,10 @@ import { useState } from "react";
 import { getPhoneticSuggestions } from "@/app/actions";
 import type { SuggestPhoneticCorrectionsOutput } from "@/ai/flows/suggest-phonetic-corrections";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wand2, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type PhoneticExceptionSuggesterProps = {
   text: string;
@@ -43,36 +43,38 @@ export function PhoneticExceptionSuggester({ text }: PhoneticExceptionSuggesterP
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="font-headline text-xl">Phonetic Exception Suggestor</CardTitle>
-          <CardDescription>Use AI to find unusual words and suggest alternatives.</CardDescription>
+    <Card className="border-dashed">
+      <CardHeader>
+        <div className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle className="font-headline text-lg">Phonetic Exception Suggestor</CardTitle>
+                <CardDescription className="text-sm">Use AI to find unusual words and suggest alternatives.</CardDescription>
+            </div>
+            <Button onClick={handleSuggestion} disabled={loading || !text.trim()} size="sm">
+            {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <Wand2 className="mr-2 h-4 w-4" />
+            )}
+            Suggest Corrections
+            </Button>
         </div>
-        <Button onClick={handleSuggestion} disabled={loading || !text.trim()}>
-          {loading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Wand2 className="mr-2 h-4 w-4" />
-          )}
-          Suggest Corrections
-        </Button>
       </CardHeader>
       {(loading || suggestions) && (
         <CardContent>
           {loading && (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="ml-4 text-muted-foreground">AI is analyzing your text...</p>
+            <div className="flex items-center justify-center p-6">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <p className="ml-3 text-muted-foreground">AI is analyzing your text...</p>
             </div>
           )}
           {suggestions && suggestions.corrections.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {suggestions.corrections.map((correction, index) => (
                 <Alert key={index}>
                   <AlertTitle className="font-semibold">{correction.word}</AlertTitle>
                   <AlertDescription>
-                    <p className="mb-2">{correction.reason}</p>
+                    <p className="mb-2 text-foreground/80">{correction.reason}</p>
                     {correction.suggestions.length > 0 && (
                          <p><strong>Suggestions:</strong> {correction.suggestions.join(", ")}</p>
                     )}
@@ -82,7 +84,7 @@ export function PhoneticExceptionSuggester({ text }: PhoneticExceptionSuggesterP
             </div>
           )}
           {suggestions && suggestions.corrections.length === 0 && (
-             <div className="text-center text-sm text-muted-foreground p-4">
+             <div className="text-center text-sm text-muted-foreground py-4">
                 No phonetic exceptions found in the provided text.
              </div>
           )}

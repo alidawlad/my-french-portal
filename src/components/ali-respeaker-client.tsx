@@ -12,7 +12,6 @@ import {
 } from "@/lib/phonetics";
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
-import { PhoneticExceptionSuggester } from "./workbench/phonetic-exception-suggester";
 import { DynamicRuleNotes } from "./workbench/dynamic-rule-notes";
 import { PatternView } from "./workbench/pattern-view";
 import { LetterTable } from "./workbench/letter-table";
@@ -58,10 +57,8 @@ export function AliRespeakerClient() {
         lines={lines}
         showArabic={showArabic}
         examples={Examples}
-        onExampleClick={(exText) => setText((t) => (t ? t + " " : "") + exText)}
+        onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
       />
-
-      <PhoneticExceptionSuggester text={text} />
 
       <DynamicRuleNotes text={text} />
 
