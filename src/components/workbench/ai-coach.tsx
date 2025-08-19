@@ -31,7 +31,8 @@ export function AiCoach({ text }: AiCoachProps) {
   }, []);
 
   const handleQuery = async (type: RuleAssistantInput['type']) => {
-    const query = text.split(/\s+/).filter(Boolean).slice(-2).join(' ') || text;
+    // Use the last word or last two words as the query
+    const query = text.trim().split(/\s+/).slice(-2).join(' ');
 
     if (!query.trim()) {
       toast({
@@ -61,7 +62,7 @@ export function AiCoach({ text }: AiCoachProps) {
     }
   };
 
-  const renderResponse = (response: any | undefined) => {
+  const renderSingleResponse = (response: any | undefined) => {
     if (!response) return null;
     return (
         <div className="p-3 bg-background/50 rounded-lg border mt-2">
@@ -84,7 +85,24 @@ export function AiCoach({ text }: AiCoachProps) {
 
 
   if (!isClient) {
-    return null;
+    return (
+        <Card className="sticky top-24">
+             <CardHeader>
+                <CardTitle className="font-headline text-lg flex items-center gap-2">
+                    <Wand2 className="w-5 h-5 text-primary" />
+                    AI Coach
+                </CardTitle>
+                <CardDescription>
+                    Get instant help on the text you've entered.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground italic">
+                    Loading...
+                </p>
+            </CardContent>
+        </Card>
+    )
   }
 
   return (
@@ -95,7 +113,7 @@ export function AiCoach({ text }: AiCoachProps) {
             AI Coach
         </CardTitle>
         <CardDescription>
-          Get instant help on the text you've entered in the workbench.
+          Get instant help on the text you've entered in the workbench. The AI will analyze the last one or two words.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -128,18 +146,13 @@ export function AiCoach({ text }: AiCoachProps) {
         )}
 
         {response && (
-            <div className="p-3 bg-background rounded-lg border mt-4">
-                <div className="flex items-start gap-3">
-                    <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                        {lastQuery && (
-                            <div className="text-xs font-semibold text-muted-foreground mb-2">
-                                For "{lastQuery.query}"...
-                            </div>
-                        )}
-                        {renderResponse(response)}
+            <div className="space-y-2 mt-4">
+                {lastQuery && (
+                    <div className="text-xs font-semibold text-muted-foreground">
+                        For "{lastQuery.query}"...
                     </div>
-                </div>
+                )}
+               {renderSingleResponse(response)}
             </div>
         )}
       </CardContent>

@@ -123,20 +123,24 @@ export function AliRespeakerClient() {
         onLoadExamples={() => setText(Examples.map(e => e.text).join("\n"))}
       />
       
-      <main className="container mx-auto p-4 space-y-8">
-        <InputSection
-            text={text}
-            onTextChange={setText}
-            lines={lines}
-            showArabic={showArabic}
-            examples={Examples}
-            onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
-            onSaveWord={handleSaveWord}
-            isSaving={isSaving}
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <AiCoach text={text} />
-            {isClient ? <RuleBook savedWords={savedWords} onDeleteWord={handleDeleteWord} /> : null}
+      <main className="container mx-auto p-4">
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+                <InputSection
+                    text={text}
+                    onTextChange={setText}
+                    lines={lines}
+                    showArabic={showArabic}
+                    examples={Examples}
+                    onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
+                    onSaveWord={handleSaveWord}
+                    isSaving={isSaving}
+                />
+                {isClient ? <RuleBook savedWords={savedWords} onDeleteWord={handleDeleteWord} /> : null}
+            </div>
+            <div className="lg:col-span-1">
+                <AiCoach text={text} />
+            </div>
         </div>
       </main>
     </div>
