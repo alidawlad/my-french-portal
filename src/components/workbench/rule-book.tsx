@@ -2,16 +2,16 @@
 // src/components/workbench/rule-book.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getRuleAssistantResponse } from "@/app/actions";
 import type { RuleAssistantInput } from "@/ai/flows/rule-assistant-flow";
 import { useToast } from "@/hooks/use-toast";
-import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2 } from "lucide-react";
+import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Badge } from '../ui/badge';
 
 export type SavedWord = {
   id: string;
@@ -36,18 +36,38 @@ type AIResponse = {
 }
 
 export function RuleBook({ savedWords, onDeleteWord }: RuleBookProps) {
-  const [loading, setLoading] = useState<string | null>(null); // Stores "id-type"
+  if (savedWords.length === 0) {
+    return (
+      <div className="text-center py-8 border rounded-lg border-dashed">
+        <BookMarked className="mx-auto h-12 w-12 text-muted-foreground/50" />
+        <p className="mt-4 text-sm text-muted-foreground">
+          No words saved yet.
+        </p>
+        <p className="text-xs text-muted-foreground/80">
+          Save words from the workbench to start your collection.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {savedWords.map((word) => (
+        <SavedWordCard key={word.id} word={word} onDeleteWord={onDeleteWord} />
+      ))}
+    </div>
+  );
+}
+
+
+function SavedWordCard({ word, onDeleteWord }: { word: SavedWord; onDeleteWord: (id: string) => void }) {
+  const [loading, setLoading] = useState<string | null>(null); // Stores "type"
   const [responses, setResponses] = useState<Record<string, AIResponse>>({});
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
-  const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  const handleAiQuery = async (word: SavedWord, type: RuleAssistantInput['type']) => {
-    const loadingKey = `${word.id}-${type}`;
-    setLoading(loadingKey);
+  const handleAiQuery = async (type: RuleAssistantInput['type']) => {
+    setLoading(type);
 
     try {
       const result = await getRuleAssistantResponse({
@@ -56,7 +76,7 @@ export function RuleBook({ savedWords, onDeleteWord }: RuleBookProps) {
         type,
       });
       const parsedExplanation = JSON.parse(result.explanation);
-      setResponses(prev => ({ ...prev, [loadingKey]: parsedExplanation }));
+      setResponses(prev => ({ ...prev, [type]: parsedExplanation }));
     } catch (error) {
       console.error(error);
       toast({
@@ -90,145 +110,96 @@ export function RuleBook({ savedWords, onDeleteWord }: RuleBookProps) {
     );
   };
   
-  if (!isClient) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="font-headline text-lg flex items-center gap-2">
-                    <BookMarked className="w-5 h-5 text-primary" />
-                    Your Saved Words
-                </CardTitle>
-                <CardDescription>
-                    Your saved words and their AI-powered explanations.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground italic">
-                    Loading...
-                </p>
-            </CardContent>
-        </Card>
-    );
-  }
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await onDeleteWord(word.id);
+    // No need to set isDeleting to false as the component will unmount
+  };
 
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
-        <CardTitle className="font-headline text-lg flex items-center gap-2">
-          <BookMarked className="w-5 h-5 text-primary" />
-          Your Saved Words
-        </CardTitle>
-        <CardDescription>
-          Your saved words and their AI-powered explanations. Click an item to see details.
-        </CardDescription>
+        <CardTitle className="font-headline text-lg">{word.fr_line}</CardTitle>
+        {word.en_line && <CardDescription>Your meaning: "{word.en_line}"</CardDescription>}
       </CardHeader>
-      <CardContent>
-        {savedWords.length === 0 ? (
-          <div className="text-center py-8">
-            <BookMarked className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-sm text-muted-foreground">
-              No words saved yet.
-            </p>
-            <p className="text-xs text-muted-foreground/80">
-              Save words from the workbench to start your collection.
-            </p>
+      <CardContent className="space-y-4 flex-grow">
+          <div>
+            <Badge variant="secondary">Ali Respell</Badge>
+            <p className="text-md tracking-wide font-medium text-muted-foreground mt-1">{word.ali_respell}</p>
           </div>
-        ) : (
-          <Accordion type="multiple" className="w-full max-h-[60vh] overflow-y-auto pr-2">
-            {savedWords.map((word) => (
-              <AccordionItem key={word.id} value={word.id}>
-                <AccordionTrigger>
-                  <div className="text-left">
-                    <p className="font-medium text-foreground">{word.fr_line}</p>
-                    {word.en_line && <p className="text-sm text-muted-foreground">{word.en_line}</p>}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                     <div className="flex justify-end">
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                                    <Trash2 className="h-4 w-4 mr-2"/>
-                                    Delete
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => onDeleteWord(word.id)} className="bg-destructive hover:bg-destructive/90">
-                                        Yes, delete it
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {word.en_line && (
-                            <div className="col-span-2">
-                                <h4 className="font-semibold text-sm mb-1">Your Meaning</h4>
-                                <p className="text-sm text-foreground/80">{word.en_line}</p>
-                            </div>
-                        )}
-                         <div>
-                            <h4 className="font-semibold text-sm mb-1">Ali Respell</h4>
-                            <p className="text-sm tracking-wide font-medium text-muted-foreground">{word.ali_respell}</p>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h4 className="font-semibold text-sm mb-1">Dictionary Definitions</h4>
-                        <div className="text-sm space-y-1 text-foreground/80">
-                            <p><strong className="font-medium text-foreground/90">EN:</strong> {word.englishDefinition}</p>
-                            <p><strong className="font-medium text-foreground/90">FR:</strong> {word.frenchDefinition}</p>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">AI Coach</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {(['explain_phonetics', 'explain_grammar', 'find_similar'] as const).map(type => {
-                          const isLoading = loading === `${word.id}-${type}`;
-                          const responseKey = `${word.id}-${type}`;
-                          return (
-                            <Button 
-                              key={type} 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleAiQuery(word, type)}
-                              disabled={!!loading || !!responses[responseKey]}
-                            >
-                              {isLoading ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                <>
-                                  {type === 'explain_phonetics' && <MessageSquareQuote className="mr-2 h-4 w-4" />}
-                                  {type === 'explain_grammar' && <BrainCircuit className="mr-2 h-4 w-4" />}
-                                  {type === 'find_similar' && <ListFilter className="mr-2 h-4 w-4" />}
-                                </>
-                              )}
-                              {type.split('_').join(' ')}
-                            </Button>
-                          )
-                        })}
-                      </div>
-                       {renderResponse(responses[`${word.id}-explain_phonetics`])}
-                       {renderResponse(responses[`${word.id}-explain_grammar`])}
-                       {renderResponse(responses[`${word.id}-find_similar`])}
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        )}
+          <div>
+            <Badge variant="secondary">Dictionary</Badge>
+             <div className="text-sm space-y-1 text-foreground/80 mt-1">
+                <p><strong className="font-medium text-foreground/90">EN:</strong> {word.englishDefinition}</p>
+                <p><strong className="font-medium text-foreground/90">FR:</strong> {word.frenchDefinition}</p>
+            </div>
+          </div>
       </CardContent>
+      <CardFooter>
+        <Collapsible className="w-full space-y-2">
+          <div className="flex items-center justify-between">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <BrainCircuit className="h-4 w-4 mr-2" />
+                  AI Coach
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </CollapsibleTrigger>
+               <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-8 w-8" disabled={isDeleting}>
+                          {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+                      </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                              Yes, delete it
+                          </AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
+              </AlertDialog>
+          </div>
+          <CollapsibleContent className="space-y-2 pt-2">
+            <div className="flex flex-wrap gap-2">
+                {(['explain_phonetics', 'explain_grammar', 'find_similar'] as const).map(type => {
+                  const isLoading = loading === type;
+                  return (
+                    <Button 
+                      key={type} 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleAiQuery(type)}
+                      disabled={!!loading || !!responses[type]}
+                      className="text-xs h-7"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      ) : (
+                        <>
+                          {type === 'explain_phonetics' && <MessageSquareQuote className="mr-2 h-3 w-3" />}
+                          {type === 'explain_grammar' && <BrainCircuit className="mr-2 h-3 w-3" />}
+                          {type === 'find_similar' && <ListFilter className="mr-2 h-3 w-3" />}
+                        </>
+                      )}
+                      {type.replace('_', ' ')}
+                    </Button>
+                  )
+                })}
+              </div>
+            {renderResponse(responses['explain_phonetics'])}
+            {renderResponse(responses['explain_grammar'])}
+            {renderResponse(responses['find_similar'])}
+          </CollapsibleContent>
+        </Collapsible>
+      </CardFooter>
     </Card>
   );
 }

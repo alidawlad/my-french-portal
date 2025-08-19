@@ -17,11 +17,12 @@ import { InputSection } from './workbench/input-section';
 import { RuleBook, type SavedWord } from "./workbench/rule-book";
 import { saveWordToRuleBook, getRuleBookWords, deleteWordFromRuleBook } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { AiCoach } from "./workbench/ai-coach";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { BookMarked } from "lucide-react";
 
 export function AliRespeakerClient() {
   const [text, setText] = useState("");
-  const [showArabic, setShowArabic] = useState(false); // Default to false
+  const [showArabic, setShowArabic] = useState(false);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
   const [isClient, setIsClient] = useState(false);
@@ -83,6 +84,7 @@ export function AliRespeakerClient() {
             title: "Saved!",
             description: `"${text}" has been added to your Saved Words.`,
         });
+        setText(""); // Clear input after saving
     } catch (error) {
         console.error(error);
         toast({
@@ -123,25 +125,38 @@ export function AliRespeakerClient() {
         onLoadExamples={() => setText(Examples.map(e => e.text).join("\n"))}
       />
       
-      <main className="container mx-auto p-4">
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-                <InputSection
-                    text={text}
-                    onTextChange={setText}
-                    lines={lines}
-                    showArabic={showArabic}
-                    examples={Examples}
-                    onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
-                    onSaveWord={handleSaveWord}
-                    isSaving={isSaving}
-                />
-                {isClient ? <RuleBook savedWords={savedWords} onDeleteWord={handleDeleteWord} /> : null}
+      <main className="container mx-auto p-4 space-y-8">
+        <InputSection
+            text={text}
+            onTextChange={setText}
+            lines={lines}
+            showArabic={showArabic}
+            examples={Examples}
+            onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
+            onSaveWord={handleSaveWord}
+            isSaving={isSaving}
+        />
+        
+        <Card className="bg-background/50">
+            <CardHeader>
+                <CardTitle className="font-headline text-lg flex items-center gap-2">
+                  <BookMarked className="w-5 h-5 text-primary" />
+                  Your Saved Words
+                </CardTitle>
+                <CardDescription>
+                  Your saved words and their AI-powered explanations.
+                </CardDescription>
+            </CardHeader>
+        </Card>
+
+        {isClient ? <RuleBook savedWords={savedWords} onDeleteWord={handleDeleteWord} /> : (
+            <div className="text-center py-8">
+                <Loader2 className="mx-auto h-12 w-12 text-muted-foreground/50 animate-spin" />
+                <p className="mt-4 text-sm text-muted-foreground">
+                    Loading your saved words...
+                </p>
             </div>
-            <div className="lg:col-span-1">
-                <AiCoach text={text} />
-            </div>
-        </div>
+        )}
       </main>
     </div>
   );
