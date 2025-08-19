@@ -19,7 +19,7 @@ export type DictionaryInput = z.infer<typeof DictionaryInputSchema>;
 
 const DictionaryOutputSchema = z.object({
   frenchDefinition: z.string().describe("A concise definition of the word in French."),
-  englishDefinition: z.string().describe("A concise definition of the word in English."),
+  englishDefinition: z.string().describe("A concise definition of the word in English, without quotes."),
 });
 export type DictionaryOutput = z.infer<typeof DictionaryOutputSchema>;
 
@@ -34,6 +34,9 @@ const dictionaryPrompt = ai.definePrompt({
   prompt: `You are a helpful bilingual dictionary.
   
   For the given French word or phrase, provide a concise one-sentence definition in both French and English.
+  
+  For the English definition, provide only the direct translation or meaning. Do not wrap it in quotation marks.
+  For example, if the word is "bonjour", the English definition should be "Hello", not ""Hello"".
 
   Word: "{{word}}"
   `,

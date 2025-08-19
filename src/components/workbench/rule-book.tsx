@@ -89,7 +89,7 @@ function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; o
     if (word.frenchDefinition && word.englishDefinition) return; // Don't re-fetch
     setLoading('definitions');
     try {
-        const definitions = await getDefinitionsForWord(word.fr_line);
+        const definitions = await getDefinitionsForWord(word.id, word.fr_line);
         setWord(prev => ({ ...prev, ...definitions }));
     } catch (error) {
         console.error(error);
@@ -182,7 +182,7 @@ function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; o
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 pt-2">
             <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={handleFetchDefinitions} disabled={!!loading} className="text-xs h-7">
+                <Button size="sm" variant="outline" onClick={handleFetchDefinitions} disabled={!!loading || (!!word.frenchDefinition && !!word.englishDefinition)} className="text-xs h-7">
                     {loading === 'definitions' ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <BookOpen className="mr-2 h-3 w-3" />}
                     Get Definitions
                 </Button>

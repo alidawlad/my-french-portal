@@ -7,7 +7,7 @@ import { ruleAssistant, type RuleAssistantInput, type RuleAssistantOutput } from
 import { textToSpeech, type TextToSpeechInput, type TextToSpeechOutput } from '@/ai/flows/text-to-speech-flow';
 import { getDictionaryEntry, type DictionaryInput, type DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import type { SavedWord } from '@/components/workbench/rule-book';
 
 export async function getPhoneticSuggestions(text: string): Promise<SuggestPhoneticCorrectionsOutput> {
@@ -64,20 +64,15 @@ export async function getEnglishMeaning(text: string): Promise<{meaning: string}
   }
 }
 
-// This no longer fetches definitions automatically.
 export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp' | 'frenchDefinition' | 'englishDefinition'>): Promise<SavedWord> {
     if (!wordData.fr_line.trim()) {
         throw new Error("Cannot save an empty word.");
     }
     try {
-        const definitions = {
-            frenchDefinition: "",
-            englishDefinition: "",
-        };
-
         const newWord: Omit<SavedWord, 'id'> = {
             ...wordData,
-            ...definitions,
+            frenchDefinition: "",
+            englishDefinition: "",
             timestamp: new Date(),
         };
 
@@ -128,15 +123,23 @@ export async function deleteWordFromRuleBook(wordId: string): Promise<void> {
 }
 
 // New function to get definitions on demand
-export async function getDefinitionsForWord(word: string): Promise<DictionaryOutput> {
+export async function getDefinitionsForWord(wordId: string, word: string): Promise<DictionaryOutput> {
     if (!word.trim()) {
         return { frenchDefinition: "", englishDefinition: "" };
     }
     try {
         const result = await getDictionaryEntry({ word });
+        
+        // Update the document in Firestore
+        const wordRef = doc(db, "rulebook", wordId);
+        await updateDoc(wordRef, {
+            frenchDefinition: result.frenchDefinition,
+            englishDefinition: result.englishDefinition,
+        });
+
         return result;
     } catch (error) {
-        console.error("Error fetching definitions:", error);
+        console.error("Error fetching and updating definitions:", error);
         throw new Error("Failed to get definitions from the AI model.");
     }
 }

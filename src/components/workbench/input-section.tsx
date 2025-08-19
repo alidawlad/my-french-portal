@@ -20,8 +20,6 @@ type InputSectionProps = {
   onTextChange: (value: string) => void;
   lines: { en: string; ar: string };
   showArabic: boolean;
-  examples: Array<{ label: string, text: string }>;
-  onExampleClick: (text: string) => void;
   onSaveWord: (userMeaning: string) => void;
   isSaving: boolean;
 };

@@ -133,8 +133,6 @@ export function AliRespeakerClient() {
                     onTextChange={setText}
                     lines={lines}
                     showArabic={showArabic}
-                    examples={Examples}
-                    onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
                     onSaveWord={handleSaveWord}
                     isSaving={isSaving}
                 />
