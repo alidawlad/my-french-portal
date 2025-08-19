@@ -1,3 +1,4 @@
+// src/components/ali-respeaker-client.tsx
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
@@ -9,15 +10,13 @@ import {
   joinTokensEnWith,
   joinTokens,
   toArabic,
+  RULES,
+  type Rule,
 } from "@/lib/phonetics";
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
-import { DynamicRuleNotes } from "./workbench/dynamic-rule-notes";
-import { PatternView } from "./workbench/pattern-view";
-import { LetterTable } from "./workbench/letter-table";
-import { OperationalRules } from "./workbench/operational-rules";
-import { SmokeTests } from "./workbench/smoke-tests";
-import { DesignIntent } from "./workbench/design-intent";
+import { AiCoach } from "./workbench/ai-coach";
+import { RuleRadar } from "./workbench/rule-radar";
 
 export function AliRespeakerClient() {
   const [text, setText] = useState("Thomas, William, Yasmine, Zohra\nLes amis arrivent.");
@@ -29,29 +28,52 @@ export function AliRespeakerClient() {
     setIsClient(true);
   }, []);
 
-  const lines = useMemo(() => {
+  const { lines, triggeredRules } = useMemo(() => {
     const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
     const outEN: string[] = [];
     const outAR: string[] = [];
+    const rulesTriggered: Map<string, { rule: Rule; count: number; examples: Set<string> }> = new Map();
+
     words.forEach((w) => {
-      if (!/[\p{L}]/u.test(w)) {
+      const tokens = transformWord(w);
+       if (!/[\p{L}]/u.test(w)) {
         outEN.push(w);
         outAR.push(w);
         return;
       }
-      const tokens = transformWord(w);
+      
+      const lw = w.toLowerCase();
+      RULES.forEach(r => {
+        if (r.re.test(lw)) {
+          if (!rulesTriggered.has(r.key)) {
+            rulesTriggered.set(r.key, { rule: r, count: 0, examples: new Set() });
+          }
+          const entry = rulesTriggered.get(r.key)!;
+          entry.count += 1;
+          entry.examples.add(w.replace(/[.,;:]$/, ''));
+        }
+      });
+
       outEN.push(joinTokensEnWith(tokens, SEP_MAP[separator]));
       outAR.push(joinTokens(tokens, toArabic));
     });
-    return { en: outEN.join(""), ar: outAR.join("") };
+
+    return {
+      lines: { en: outEN.join(""), ar: outAR.join("") },
+      triggeredRules: Array.from(rulesTriggered.values()),
+    };
   }, [text, separator]);
-  
+
   if (!isClient) {
-    return null; 
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-background">
+            <div className="text-muted-foreground">Loading Workbench...</div>
+        </div>
+    );
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-4 sm:p-6 lg:p-8 space-y-6 font-body">
+    <div className="min-h-screen bg-background text-foreground font-body">
       <WorkbenchHeader
         showArabic={showArabic}
         onShowArabicChange={setShowArabic}
@@ -60,26 +82,26 @@ export function AliRespeakerClient() {
         onLoadExamples={() => setText(Examples.map(e => e.text).join("\n"))}
       />
       
-      <InputSection
-        text={text}
-        onTextChange={setText}
-        lines={lines}
-        showArabic={showArabic}
-        examples={Examples}
-        onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
-      />
+      <main className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr] gap-4 p-4">
+        <aside className="hidden lg:block">
+          <AiCoach text={text} />
+        </aside>
 
-      <DynamicRuleNotes text={text} />
+        <div className="space-y-4">
+            <InputSection
+                text={text}
+                onTextChange={setText}
+                lines={lines}
+                showArabic={showArabic}
+                examples={Examples}
+                onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
+            />
+        </div>
 
-      <PatternView text={text} />
-      
-      <LetterTable />
-      
-      <OperationalRules />
-
-      <SmokeTests separator={separator} showArabic={showArabic} />
-
-      <DesignIntent />
+        <aside className="hidden lg:block">
+          <RuleRadar triggeredRules={triggeredRules} />
+        </aside>
+      </main>
     </div>
   );
 }

@@ -30,25 +30,31 @@ export const LETTERS: Array<{ ch: string; nameIPA: string; ali: string; alt?: st
   { ch: "Z", nameIPA: "[zɛd]", ali: "zèd" },
 ];
 
-export const RULES = [
-  { key: 'softC',  label: "c before e/i/y → S (soft c)",          re: /c(?=[eéiïy])/ },
-  { key: 'softG',  label: "g before e/i/y → ZH (soft g)",          re: /g(?=[eéiïy])/ },
-  { key: 'ou',     label: "ou → OO",                               re: /ou/ },
-  { key: 'oi',     label: "oi → WA",                               re: /oi/ },
-  { key: 'au',     label: "au/eau → OH",                           re: /(au|eau)/ },
-  { key: 'eu',     label: "eu/œu → EU (ö‑like)",                   re: /(eu|œu)/ },
-  { key: 'nasAL',  label: "an/en/am/em → nasal (AH˜)",             re: /(an|am|en|em)/ },
-  { key: 'nasON',  label: "on/om → nasal (OH˜)",                   re: /(on|om)/ },
-  { key: 'nasIN',  label: "in/im/ain/ein/yn/ym → nasal (EH˜)",     re: /(in|im|ain|ein|yn|ym)/ },
-  { key: 'nasUN',  label: "un/um → nasal (UH˜)",                   re: /(un|um)/ },
-  { key: 'sBetween',label: "s between vowels → Z",                 re: /[aeiouyàâäéèêëîïôöùûüœ]s(?=[aeiouyàâäéèêëîïôöùûüœ])/ },
-  { key: 'ill',    label: "vowel + ill → Y (fille)",               re: /[aeiouy]ill/ },
-  { key: 'finalE', label: "final -e often silent (schwa)",         re: /e$/ },
-  { key: 'hSilent',label: "h is silent (may block liaison)",       re: /h/ },
-  { key: 'yGlide', label: "y before vowel → glide /j/",            re: /y(?=[aeiouyàâäéèêëîïôöùûüœ])/ },
-  { key: 'jToZh',  label: "j → ZH",                                re: /j/ },
-  { key: 'quToK',  label: "qu → K",                                re: /qu/ },
-  { key: 'cedilla',label: "ç → S",                                 re: /ç/ },
+export type Rule = {
+    key: string;
+    label: string;
+    re: RegExp;
+};
+
+export const RULES: Rule[] = [
+  { key: 'softC',  label: "c before e/i/y → S (soft c)",          re: /c(?=[eéiïy])/i },
+  { key: 'softG',  label: "g before e/i/y → ZH (soft g)",          re: /g(?=[eéiïy])/i },
+  { key: 'ou',     label: "ou → OO",                               re: /ou/i },
+  { key: 'oi',     label: "oi → WA",                               re: /oi/i },
+  { key: 'au',     label: "au/eau → OH",                           re: /(au|eau)/i },
+  { key: 'eu',     label: "eu/œu → EU (ö‑like)",                   re: /(eu|œu)/i },
+  { key: 'nasAL',  label: "an/en/am/em → nasal (AH˜)",             re: /(an|am|en|em)/i },
+  { key: 'nasON',  label: "on/om → nasal (OH˜)",                   re: /(on|om)/i },
+  { key: 'nasIN',  label: "in/im/ain/ein/yn/ym → nasal (EH˜)",     re: /(in|im|ain|ein|yn|ym)/i },
+  { key: 'nasUN',  label: "un/um → nasal (UH˜)",                   re: /(un|um)/i },
+  { key: 'sBetween',label: "s between vowels → Z",                 re: /[aeiouyàâäéèêëîïôöùûüœ]s(?=[aeiouyàâäéèêëîïôöùûüœ])/i },
+  { key: 'ill',    label: "vowel + ill → Y (fille)",               re: /[aeiouy]ill/i },
+  { key: 'finalE', label: "final -e often silent (schwa)",         re: /e$/i },
+  { key: "hSilent",label: "h is silent (may block liaison)",       re: /h/i },
+  { key: 'yGlide', label: "y before vowel → glide /j/",            re: /y(?=[aeiouyàâäéèêëîïôöùûüœ])/i },
+  { key: 'jToZh',  label: "j → ZH",                                re: /j/i },
+  { key: 'quToK',  label: "qu → K",                                re: /qu/i },
+  { key: 'cedilla',label: "ç → S",                                 re: /ç/i },
 ];
 
 export const Examples: Array<{ label: string; text: string }> = [
