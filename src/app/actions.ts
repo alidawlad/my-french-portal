@@ -40,7 +40,8 @@ export async function getAudioForText(input: TextToSpeechInput): Promise<TextToS
     return result;
   } catch (error) {
     console.error("Error fetching audio for text:", error);
-    // Re-throwing the error to get more detailed logs on the client for debugging.
-    throw new Error("Failed to get audio from the AI model.");
+    // Return empty audio object on failure to prevent app crash.
+    // The client will handle showing a toast notification.
+    return { audio: "" };
   }
 }
