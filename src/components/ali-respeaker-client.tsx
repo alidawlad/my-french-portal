@@ -22,7 +22,7 @@ import { saveWordToRuleBook, getRuleBookWords } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 
 export function AliRespeakerClient() {
-  const [text, setText] = useState("Thomas");
+  const [text, setText] = useState("");
   const [showArabic, setShowArabic] = useState(true);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
@@ -120,7 +120,7 @@ export function AliRespeakerClient() {
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <AiCoach text={text} />
-            {isClient && <RuleBook savedWords={savedWords} />}
+            {isClient ? <RuleBook savedWords={savedWords} /> : null}
         </div>
       </main>
     </div>

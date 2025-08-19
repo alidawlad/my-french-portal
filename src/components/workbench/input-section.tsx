@@ -138,7 +138,7 @@ export function InputSection({
             onChange={(e) => onTextChange(e.target.value)}
             rows={2}
             className="mt-1 resize-y bg-card text-lg"
-            placeholder="Tapez ici…"
+            placeholder="Type or paste French text here..."
           />
            <div className="flex flex-wrap gap-2 pt-2">
             {examples.map((ex) => (
