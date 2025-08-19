@@ -18,7 +18,7 @@ import { RuleBook, type SavedWord } from "./workbench/rule-book";
 import { saveWordToRuleBook, getRuleBookWords, deleteWordFromRuleBook } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BookMarked } from "lucide-react";
+import { BookMarked, Loader2 } from "lucide-react";
 
 export function AliRespeakerClient() {
   const [text, setText] = useState("");
