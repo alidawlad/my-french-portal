@@ -18,8 +18,8 @@ import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
 import { AiCoach } from "./workbench/ai-coach";
 import { RuleBook, type SavedWord } from "./workbench/rule-book";
-
-const LOCAL_STORAGE_KEY = 'ali-respeaker-saved-words';
+import { saveWordToRuleBook, getRuleBookWords } from "@/app/actions";
+import { useToast } from "@/hooks/use-toast";
 
 export function AliRespeakerClient() {
   const [text, setText] = useState("Thomas");
@@ -27,36 +27,23 @@ export function AliRespeakerClient() {
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setIsClient(true);
-    try {
-        const storedWords = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (storedWords) {
-            setSavedWords(JSON.parse(storedWords));
-        }
-    } catch (error) {
-        console.error("Failed to load saved words from localStorage", error);
-    }
+    const fetchWords = async () => {
+        const words = await getRuleBookWords();
+        setSavedWords(words);
+    };
+    fetchWords();
   }, []);
 
-  useEffect(() => {
-    if (isClient) {
-        try {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(savedWords));
-        } catch (error) {
-            console.error("Failed to save words to localStorage", error);
-        }
-    }
-  }, [savedWords, isClient]);
-
-
-  const { lines, triggeredRules } = useMemo(() => {
+  const { lines } = useMemo(() => {
     const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
     const outEN: string[] = [];
     const outAR: string[] = [];
-    const rulesTriggered: Map<string, { rule: Rule; count: number; examples: Set<string> }> = new Map();
-
+    
     words.forEach((w) => {
       const tokens = transformWord(w);
        if (!/[\p{L}]/u.test(w)) {
@@ -64,39 +51,41 @@ export function AliRespeakerClient() {
         outAR.push(w);
         return;
       }
-      
-      const lw = w.toLowerCase();
-      RULES.forEach(r => {
-        if (r.re.test(lw)) {
-          if (!rulesTriggered.has(r.key)) {
-            rulesTriggered.set(r.key, { rule: r, count: 0, examples: new Set() });
-          }
-          const entry = rulesTriggered.get(r.key)!;
-          entry.count += 1;
-          entry.examples.add(w.replace(/[.,;:]$/, ''));
-        }
-      });
-
       outEN.push(joinTokensEnWith(tokens, SEP_MAP[separator]));
       outAR.push(joinTokens(tokens, toArabic));
     });
 
     return {
       lines: { en: outEN.join(""), ar: outAR.join("") },
-      triggeredRules: Array.from(rulesTriggered.values()),
     };
   }, [text, separator]);
 
-  const handleSaveWord = () => {
-    if (!text.trim()) return;
-    const newWord: SavedWord = {
-      id: Date.now().toString(),
-      fr_line: text,
-      en_line: lines.en,
-    };
-    setSavedWords(prev => [newWord, ...prev]);
+  const handleSaveWord = async () => {
+    if (!text.trim() || isSaving) return;
+    setIsSaving(true);
+    
+    try {
+        const newWordData = {
+            fr_line: text,
+            en_line: lines.en,
+        };
+        const newSavedWord = await saveWordToRuleBook(newWordData);
+        setSavedWords(prev => [newSavedWord, ...prev]);
+        toast({
+            title: "Saved!",
+            description: `"${text}" has been added to your Rule Book.`,
+        });
+    } catch (error) {
+        console.error(error);
+        toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: "Could not save the word to your Rule Book.",
+        });
+    } finally {
+        setIsSaving(false);
+    }
   };
-
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body">
@@ -108,26 +97,21 @@ export function AliRespeakerClient() {
         onLoadExamples={() => setText(Examples.map(e => e.text).join("\n"))}
       />
       
-      <main className="grid grid-cols-1 lg:grid-cols-[1fr_2fr_1fr] gap-4 p-4">
-        <aside className="hidden lg:block">
-          <AiCoach text={text} />
-        </aside>
-
-        <div className="space-y-4">
-            <InputSection
-                text={text}
-                onTextChange={setText}
-                lines={lines}
-                showArabic={showArabic}
-                examples={Examples}
-                onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
-                onSaveWord={handleSaveWord}
-            />
+      <main className="container mx-auto p-4 space-y-8">
+        <InputSection
+            text={text}
+            onTextChange={setText}
+            lines={lines}
+            showArabic={showArabic}
+            examples={Examples}
+            onExampleClick={(exText) => setText((t) => (t ? t + "\n" : "") + exText)}
+            onSaveWord={handleSaveWord}
+            isSaving={isSaving}
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <AiCoach text={text} />
+            <RuleBook savedWords={savedWords} />
         </div>
-
-        <aside className="hidden lg:block">
-          <RuleBook savedWords={savedWords} />
-        </aside>
       </main>
     </div>
   );

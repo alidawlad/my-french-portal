@@ -15,6 +15,9 @@ export type SavedWord = {
   id: string;
   fr_line: string;
   en_line: string;
+  frenchDefinition: string;
+  englishDefinition: string;
+  timestamp: Date;
 };
 
 type RuleBookProps = {
@@ -85,7 +88,7 @@ export function RuleBook({ savedWords }: RuleBookProps) {
   
   if (!isClient) {
     return (
-        <Card className="sticky top-24">
+        <Card>
             <CardHeader>
                 <CardTitle className="font-headline text-lg flex items-center gap-2">
                     <BookMarked className="w-5 h-5 text-primary" />
@@ -105,7 +108,7 @@ export function RuleBook({ savedWords }: RuleBookProps) {
   }
 
   return (
-    <Card className="sticky top-24">
+    <Card>
       <CardHeader>
         <CardTitle className="font-headline text-lg flex items-center gap-2">
           <BookMarked className="w-5 h-5 text-primary" />
@@ -117,9 +120,15 @@ export function RuleBook({ savedWords }: RuleBookProps) {
       </CardHeader>
       <CardContent>
         {savedWords.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">
-            Save words from the workbench to start your collection.
-          </p>
+          <div className="text-center py-8">
+            <BookMarked className="mx-auto h-12 w-12 text-muted-foreground/50" />
+            <p className="mt-4 text-sm text-muted-foreground">
+              Your Rule Book is empty.
+            </p>
+            <p className="text-xs text-muted-foreground/80">
+              Save words from the workbench to start your collection.
+            </p>
+          </div>
         ) : (
           <Accordion type="multiple" className="w-full max-h-[60vh] overflow-y-auto pr-2">
             {savedWords.map((word) => (
@@ -131,35 +140,46 @@ export function RuleBook({ savedWords }: RuleBookProps) {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      {(['explain_phonetics', 'explain_grammar', 'find_similar'] as const).map(type => {
-                        const isLoading = loading === `${word.id}-${type}`;
-                        return (
-                          <Button 
-                            key={type} 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleAiQuery(word, type)}
-                            disabled={!!loading}
-                          >
-                            {isLoading ? (
-                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                               <>
-                                {type === 'explain_phonetics' && <MessageSquareQuote className="mr-2 h-4 w-4" />}
-                                {type === 'explain_grammar' && <BrainCircuit className="mr-2 h-4 w-4" />}
-                                {type === 'find_similar' && <ListFilter className="mr-2 h-4 w-4" />}
-                               </>
-                            )}
-                            {type.split('_')[1]}
-                          </Button>
-                        )
-                      })}
+                  <div className="space-y-4">
+                    <div>
+                        <h4 className="font-semibold text-sm mb-1">Definitions</h4>
+                        <div className="text-sm space-y-1 text-foreground/80">
+                            <p><strong className="font-medium text-foreground/90">EN:</strong> {word.englishDefinition}</p>
+                            <p><strong className="font-medium text-foreground/90">FR:</strong> {word.frenchDefinition}</p>
+                        </div>
                     </div>
-                     {renderResponse(responses[`${word.id}-explain_phonetics`])}
-                     {renderResponse(responses[`${word.id}-explain_grammar`])}
-                     {renderResponse(responses[`${word.id}-find_similar`])}
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">AI Coach</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {(['explain_phonetics', 'explain_grammar', 'find_similar'] as const).map(type => {
+                          const isLoading = loading === `${word.id}-${type}`;
+                          const responseKey = `${word.id}-${type}`;
+                          return (
+                            <Button 
+                              key={type} 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleAiQuery(word, type)}
+                              disabled={!!loading || !!responses[responseKey]}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  {type === 'explain_phonetics' && <MessageSquareQuote className="mr-2 h-4 w-4" />}
+                                  {type === 'explain_grammar' && <BrainCircuit className="mr-2 h-4 w-4" />}
+                                  {type === 'find_similar' && <ListFilter className="mr-2 h-4 w-4" />}
+                                </>
+                              )}
+                              {type.split('_').join(' ')}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                       {renderResponse(responses[`${word.id}-explain_phonetics`])}
+                       {renderResponse(responses[`${word.id}-explain_grammar`])}
+                       {renderResponse(responses[`${word.id}-find_similar`])}
+                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>

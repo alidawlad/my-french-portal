@@ -1,3 +1,4 @@
+
 // src/components/workbench/input-section.tsx
 "use client";
 
@@ -5,9 +6,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { transformWord, toEN, type Token, RULES, type Rule, type RuleCategory } from "@/lib/phonetics";
+import { type Rule, RULES, type RuleCategory } from "@/lib/phonetics";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { Volume2, Loader2, Bookmark } from 'lucide-react';
 import { getAudioForText } from '@/app/actions';
@@ -21,6 +21,7 @@ type InputSectionProps = {
   examples: Array<{ label: string, text: string }>;
   onExampleClick: (text: string) => void;
   onSaveWord: () => void;
+  isSaving: boolean;
 };
 
 const UnderlineColors: Record<RuleCategory, string> = {
@@ -54,6 +55,7 @@ export function InputSection({
   examples,
   onExampleClick,
   onSaveWord,
+  isSaving,
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const { toast } = useToast();
@@ -118,9 +120,9 @@ export function InputSection({
             <CardTitle className="font-headline text-xl">Workbench</CardTitle>
             <CardDescription>Type French text to see it respelled and analyzed.</CardDescription>
           </div>
-          <Button onClick={onSaveWord} disabled={!text.trim()}>
-            <Bookmark className="mr-2 h-4 w-4" />
-            Save to Rule Book
+          <Button onClick={onSaveWord} disabled={!text.trim() || isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bookmark className="mr-2 h-4 w-4" />}
+            {isSaving ? "Saving..." : "Save to Rule Book"}
           </Button>
         </div>
       </CardHeader>
