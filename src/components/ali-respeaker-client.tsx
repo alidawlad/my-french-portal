@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Examples,
   SepKind,
@@ -23,6 +23,12 @@ export function AliRespeakerClient() {
   const [text, setText] = useState("Thomas, William, Yasmine, Zohra\nLes amis arrivent.");
   const [showArabic, setShowArabic] = useState(true);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
+  const [apiKey, setApiKey] = useState(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const lines = useMemo(() => {
     const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
@@ -40,6 +46,10 @@ export function AliRespeakerClient() {
     });
     return { en: outEN.join(""), ar: outAR.join("") };
   }, [text, separator]);
+  
+  if (!isClient) {
+    return null; 
+  }
 
   return (
     <div className="mx-auto max-w-5xl p-4 sm:p-6 lg:p-8 space-y-6 font-body">
@@ -49,6 +59,7 @@ export function AliRespeakerClient() {
         separator={separator}
         onSeparatorChange={setSeparator}
         onLoadExamples={() => setText(Examples.map(e => e.text).join("\n"))}
+        apiKey={apiKey}
       />
       
       <InputSection
