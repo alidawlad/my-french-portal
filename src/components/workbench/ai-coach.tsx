@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wand2, Loader2, Sparkles, BrainCircuit, MessageSquareQuote, ListFilter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 
 type AiCoachProps = {
   text: string;
@@ -23,7 +22,7 @@ const actionChips: {label: string; type: RuleAssistantInput['type']; icon: React
 export function AiCoach({ text }: AiCoachProps) {
   const [loading, setLoading] = useState(false);
   const [lastQuery, setLastQuery] = useState<{query: string, type: RuleAssistantInput['type'] } | null>(null);
-  const [response, setResponse] = useState<string | null>(null);
+  const [response, setResponse] = useState<any | null>(null);
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
 
@@ -32,8 +31,6 @@ export function AiCoach({ text }: AiCoachProps) {
   }, []);
 
   const handleQuery = async (type: RuleAssistantInput['type']) => {
-    // For now, we'll use the whole text as the query.
-    // In a future version, this could be more granular.
     const query = text.split(/\s+/).filter(Boolean).slice(-2).join(' ') || text;
 
     if (!query.trim()) {
@@ -51,7 +48,7 @@ export function AiCoach({ text }: AiCoachProps) {
 
     try {
       const result = await getRuleAssistantResponse({ text, query, type });
-      setResponse(result.explanation);
+      setResponse(JSON.parse(result.explanation));
     } catch (error) {
       toast({
         variant: "destructive",
@@ -63,6 +60,28 @@ export function AiCoach({ text }: AiCoachProps) {
       setLoading(false);
     }
   };
+
+  const renderResponse = (response: any | undefined) => {
+    if (!response) return null;
+    return (
+        <div className="p-3 bg-background/50 rounded-lg border mt-2">
+            <div className="flex items-start gap-3">
+                <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                    {response.summary && <p className="font-semibold">{response.summary}</p>}
+                    {response.details && <p className="mt-1 text-foreground/80">{response.details}</p>}
+                    {response.pattern && <p className="font-semibold">{response.pattern}</p>}
+                    {response.words && (
+                        <ul className="list-disc list-inside mt-1 text-foreground/80">
+                            {response.words.map((w: string, i: number) => <li key={i}>{w}</li>)}
+                        </ul>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+  };
+
 
   if (!isClient) {
     return null;
@@ -118,7 +137,7 @@ export function AiCoach({ text }: AiCoachProps) {
                                 For "{lastQuery.query}"...
                             </div>
                         )}
-                        <p className="text-sm text-foreground/90 whitespace-pre-wrap">{response}</p>
+                        {renderResponse(response)}
                     </div>
                 </div>
             </div>

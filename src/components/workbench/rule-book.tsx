@@ -1,7 +1,7 @@
 // src/components/workbench/rule-book.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,11 @@ export function RuleBook({ savedWords }: RuleBookProps) {
   const [loading, setLoading] = useState<string | null>(null); // Stores "id-type"
   const [responses, setResponses] = useState<Record<string, AIResponse>>({});
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleAiQuery = async (word: SavedWord, type: RuleAssistantInput['type']) => {
     const loadingKey = `${word.id}-${type}`;
@@ -76,6 +81,10 @@ export function RuleBook({ savedWords }: RuleBookProps) {
       </div>
     );
   };
+  
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <Card className="sticky top-24">
