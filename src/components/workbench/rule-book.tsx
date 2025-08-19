@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { getRuleAssistantResponse } from "@/app/actions";
 import type { RuleAssistantInput } from "@/ai/flows/rule-assistant-flow";
 import { useToast } from "@/hooks/use-toast";
-import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2 } from "lucide-react";
+import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+
 
 export type SavedWord = {
   id: string;
@@ -23,6 +25,7 @@ export type SavedWord = {
 
 type RuleBookProps = {
   savedWords: SavedWord[];
+  onDeleteWord: (id: string) => void;
 };
 
 type AIResponse = {
@@ -32,7 +35,7 @@ type AIResponse = {
   words?: string[];
 }
 
-export function RuleBook({ savedWords }: RuleBookProps) {
+export function RuleBook({ savedWords, onDeleteWord }: RuleBookProps) {
   const [loading, setLoading] = useState<string | null>(null); // Stores "id-type"
   const [responses, setResponses] = useState<Record<string, AIResponse>>({});
   const { toast } = useToast();
@@ -93,7 +96,7 @@ export function RuleBook({ savedWords }: RuleBookProps) {
             <CardHeader>
                 <CardTitle className="font-headline text-lg flex items-center gap-2">
                     <BookMarked className="w-5 h-5 text-primary" />
-                    Rule Book
+                    Your Saved Words
                 </CardTitle>
                 <CardDescription>
                     Your saved words and their AI-powered explanations.
@@ -113,10 +116,10 @@ export function RuleBook({ savedWords }: RuleBookProps) {
       <CardHeader>
         <CardTitle className="font-headline text-lg flex items-center gap-2">
           <BookMarked className="w-5 h-5 text-primary" />
-          Rule Book
+          Your Saved Words
         </CardTitle>
         <CardDescription>
-          Your saved words and their AI-powered explanations.
+          Your saved words and their AI-powered explanations. Click an item to see details.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -124,7 +127,7 @@ export function RuleBook({ savedWords }: RuleBookProps) {
           <div className="text-center py-8">
             <BookMarked className="mx-auto h-12 w-12 text-muted-foreground/50" />
             <p className="mt-4 text-sm text-muted-foreground">
-              Your Rule Book is empty.
+              No words saved yet.
             </p>
             <p className="text-xs text-muted-foreground/80">
               Save words from the workbench to start your collection.
@@ -142,18 +145,42 @@ export function RuleBook({ savedWords }: RuleBookProps) {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-4">
-                    
+                     <div className="flex justify-end">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="h-4 w-4 mr-2"/>
+                                    Delete
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => onDeleteWord(word.id)} className="bg-destructive hover:bg-destructive/90">
+                                        Yes, delete it
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
+                        {word.en_line && (
+                            <div className="col-span-2">
+                                <h4 className="font-semibold text-sm mb-1">Your Meaning</h4>
+                                <p className="text-sm text-foreground/80">{word.en_line}</p>
+                            </div>
+                        )}
+                         <div>
                             <h4 className="font-semibold text-sm mb-1">Ali Respell</h4>
                             <p className="text-sm tracking-wide font-medium text-muted-foreground">{word.ali_respell}</p>
                         </div>
-                        {word.en_line && (
-                        <div>
-                            <h4 className="font-semibold text-sm mb-1">Your Meaning</h4>
-                            <p className="text-sm text-foreground/80">{word.en_line}</p>
-                        </div>
-                        )}
                     </div>
                     
                     <div>

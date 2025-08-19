@@ -7,7 +7,7 @@ import { ruleAssistant, type RuleAssistantInput, type RuleAssistantOutput } from
 import { textToSpeech, type TextToSpeechInput, type TextToSpeechOutput } from '@/ai/flows/text-to-speech-flow';
 import { getDictionaryEntry, type DictionaryInput, type DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "firebase/firestore";
 import type { SavedWord } from '@/components/workbench/rule-book';
 
 export async function getPhoneticSuggestions(text: string): Promise<SuggestPhoneticCorrectionsOutput> {
@@ -80,7 +80,6 @@ export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'times
     }
 }
 
-
 export async function getRuleBookWords(): Promise<SavedWord[]> {
     try {
         const q = query(collection(db, "rulebook"), orderBy("timestamp", "desc"));
@@ -104,5 +103,14 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
         // Return an empty array on error so the app doesn't crash.
         // A more robust implementation could involve specific error handling.
         return [];
+    }
+}
+
+export async function deleteWordFromRuleBook(wordId: string): Promise<void> {
+    try {
+        await deleteDoc(doc(db, "rulebook", wordId));
+    } catch (error) {
+        console.error("Error deleting word from Rule Book:", error);
+        throw new Error("Failed to delete word from the Rule Book.");
     }
 }

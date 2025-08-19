@@ -11,19 +11,17 @@ import {
   joinTokensEnWith,
   joinTokens,
   toArabic,
-  RULES,
-  type Rule,
 } from "@/lib/phonetics";
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
-import { AiCoach } from "./workbench/ai-coach";
 import { RuleBook, type SavedWord } from "./workbench/rule-book";
-import { saveWordToRuleBook, getRuleBookWords } from "@/app/actions";
+import { saveWordToRuleBook, getRuleBookWords, deleteWordFromRuleBook } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
+import { AiCoach } from "./workbench/ai-coach";
 
 export function AliRespeakerClient() {
   const [text, setText] = useState("");
-  const [showArabic, setShowArabic] = useState(true);
+  const [showArabic, setShowArabic] = useState(false); // Default to false
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
   const [isClient, setIsClient] = useState(false);
@@ -83,19 +81,37 @@ export function AliRespeakerClient() {
         setSavedWords(prev => [newSavedWord, ...prev]);
         toast({
             title: "Saved!",
-            description: `"${text}" has been added to your Rule Book.`,
+            description: `"${text}" has been added to your Saved Words.`,
         });
     } catch (error) {
         console.error(error);
         toast({
             variant: "destructive",
             title: "Save Failed",
-            description: "Could not save the word to your Rule Book.",
+            description: "Could not save the word.",
         });
     } finally {
         setIsSaving(false);
     }
   };
+
+  const handleDeleteWord = async (wordId: string) => {
+    try {
+        await deleteWordFromRuleBook(wordId);
+        setSavedWords(prev => prev.filter(word => word.id !== wordId));
+        toast({
+            title: "Deleted",
+            description: "The word has been removed from your list."
+        });
+    } catch (error) {
+        console.error(error);
+        toast({
+            variant: "destructive",
+            title: "Delete Failed",
+            description: "Could not delete the word."
+        });
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body">
@@ -120,7 +136,7 @@ export function AliRespeakerClient() {
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <AiCoach text={text} />
-            {isClient ? <RuleBook savedWords={savedWords} /> : null}
+            {isClient ? <RuleBook savedWords={savedWords} onDeleteWord={handleDeleteWord} /> : null}
         </div>
       </main>
     </div>
