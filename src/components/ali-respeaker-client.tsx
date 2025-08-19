@@ -1,7 +1,8 @@
+
 // src/components/ali-respeaker-client.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Examples,
   SepKind,
@@ -18,11 +19,37 @@ import { InputSection } from './workbench/input-section';
 import { AiCoach } from "./workbench/ai-coach";
 import { RuleBook, type SavedWord } from "./workbench/rule-book";
 
+const LOCAL_STORAGE_KEY = 'ali-respeaker-saved-words';
+
 export function AliRespeakerClient() {
   const [text, setText] = useState("Thomas");
   const [showArabic, setShowArabic] = useState(true);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    try {
+        const storedWords = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedWords) {
+            setSavedWords(JSON.parse(storedWords));
+        }
+    } catch (error) {
+        console.error("Failed to load saved words from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+        try {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(savedWords));
+        } catch (error) {
+            console.error("Failed to save words to localStorage", error);
+        }
+    }
+  }, [savedWords, isClient]);
+
 
   const { lines, triggeredRules } = useMemo(() => {
     const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
@@ -67,7 +94,7 @@ export function AliRespeakerClient() {
       fr_line: text,
       en_line: lines.en,
     };
-    setSavedWords(prev => [...prev, newWord]);
+    setSavedWords(prev => [newWord, ...prev]);
   };
 
 

@@ -1,3 +1,4 @@
+
 // src/components/workbench/rule-book.tsx
 "use client";
 
@@ -83,7 +84,24 @@ export function RuleBook({ savedWords }: RuleBookProps) {
   };
   
   if (!isClient) {
-    return null;
+    return (
+        <Card className="sticky top-24">
+            <CardHeader>
+                <CardTitle className="font-headline text-lg flex items-center gap-2">
+                    <BookMarked className="w-5 h-5 text-primary" />
+                    Rule Book
+                </CardTitle>
+                <CardDescription>
+                    Your saved words and their AI-powered explanations.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground italic">
+                    Loading...
+                </p>
+            </CardContent>
+        </Card>
+    );
   }
 
   return (
@@ -103,7 +121,7 @@ export function RuleBook({ savedWords }: RuleBookProps) {
             Save words from the workbench to start your collection.
           </p>
         ) : (
-          <Accordion type="multiple" className="w-full">
+          <Accordion type="multiple" className="w-full max-h-[60vh] overflow-y-auto pr-2">
             {savedWords.map((word) => (
               <AccordionItem key={word.id} value={word.id}>
                 <AccordionTrigger>
