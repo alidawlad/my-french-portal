@@ -95,6 +95,12 @@ const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l', 'q'];
 // Exceptions to the silent final consonant rule.
 const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'sud', 'anaïs', 'reims']);
 
+const COMMON_FIXES: Record<string, string> = {
+    "cava": "ça va",
+    "ca va": "ça va",
+    "bein": "bien",
+};
+
 
 export const toArabic = (t: Token): string => {
   switch (t) {
@@ -169,7 +175,14 @@ const isNasalBlocker = (c: string) => /[bcdfghjklmnpqrstvwxz]/.test(c);
 export const transformWord = (wordRaw: string): Token[] => {
   let w = wordRaw.normalize("NFC");
   if (!/[\p{L}]/u.test(w)) return [w as Token];
+  
   let lw = w.toLowerCase();
+
+  // L0: Pre-processing & Normalization
+  if (COMMON_FIXES[lw]) {
+      lw = COMMON_FIXES[lw];
+  }
+
 
   // Nasal Pass: must happen before other vowel transformations
   const nasalRegex = /(in|im|yn|ym|ain|ein|an|am|en|em|on|om|un|um)(?=$|[^a-zàâäéèêëîïôöùûüœ])/ig;
@@ -296,5 +309,7 @@ export const joinTokensEnWith = (tokens: Token[], sep: string) => tokens.map(toE
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
+
+    
 
     
