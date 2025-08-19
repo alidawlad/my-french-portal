@@ -23,7 +23,6 @@ export function AliRespeakerClient() {
   const [text, setText] = useState("Thomas, William, Yasmine, Zohra\nLes amis arrivent.");
   const [showArabic, setShowArabic] = useState(true);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
-  const [apiKey, setApiKey] = useState(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -59,7 +58,6 @@ export function AliRespeakerClient() {
         separator={separator}
         onSeparatorChange={setSeparator}
         onLoadExamples={() => setText(Examples.map(e => e.text).join("\n"))}
-        apiKey={apiKey}
       />
       
       <InputSection

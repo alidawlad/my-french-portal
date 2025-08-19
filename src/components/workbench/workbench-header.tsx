@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { RefreshCcw, Eye, EyeOff } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import type { SepKind } from "@/lib/phonetics";
 import { cn } from "@/lib/utils";
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 
 type WorkbenchHeaderProps = {
   showArabic: boolean;
@@ -16,7 +14,6 @@ type WorkbenchHeaderProps = {
   separator: SepKind;
   onSeparatorChange: (kind: SepKind) => void;
   onLoadExamples: () => void;
-  apiKey: string;
 };
 
 export function WorkbenchHeader({
@@ -25,16 +22,7 @@ export function WorkbenchHeader({
   separator,
   onSeparatorChange,
   onLoadExamples,
-  apiKey: initialApiKey,
 }: WorkbenchHeaderProps) {
-  const [showKey, setShowKey] = useState(false);
-  const { toast } = useToast();
-
-  const handleApiKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // This function would handle state updates if we were saving the key.
-    // For now, it's just a read-only display based on env vars.
-  };
-
   return (
     <header className="space-y-4">
       <h1 className="text-3xl lg:text-4xl font-headline font-semibold tracking-tight text-foreground">
@@ -69,29 +57,6 @@ export function WorkbenchHeader({
           Load examples
         </Button>
       </div>
-       <div className="flex items-center gap-2 max-w-md">
-          <Label htmlFor="api-key-input" className="text-sm text-muted-foreground flex-shrink-0">Gemini API Key</Label>
-          <div className="relative w-full">
-            <Input
-              id="api-key-input"
-              type={showKey ? 'text' : 'password'}
-              value={initialApiKey}
-              readOnly
-              className="pr-10 bg-input"
-              placeholder="Your API key is not set"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
-              onClick={() => setShowKey(!showKey)}
-            >
-              {showKey ? <EyeOff /> : <Eye />}
-              <span className="sr-only">{showKey ? 'Hide API key' : 'Show API key'}</span>
-            </Button>
-          </div>
-        </div>
     </header>
   );
 }
