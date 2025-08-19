@@ -5,7 +5,6 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { RefreshCcw } from "lucide-react";
 import type { SepKind } from "@/lib/phonetics";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +21,6 @@ export function WorkbenchHeader({
   onShowArabicChange,
   separator,
   onSeparatorChange,
-  onLoadExamples,
 }: WorkbenchHeaderProps) {
   return (
     <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b p-4 space-y-2">
@@ -30,10 +28,6 @@ export function WorkbenchHeader({
         <h1 className="text-2xl font-headline font-semibold tracking-tight text-foreground">
           Ali Pronunciation Workbench
         </h1>
-        <Button variant="outline" size="sm" onClick={onLoadExamples}>
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            Load examples
-        </Button>
       </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
         <div className="flex items-center gap-2">

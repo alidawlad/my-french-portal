@@ -51,6 +51,19 @@ export async function getAudioForText(input: TextToSpeechInput): Promise<TextToS
   }
 }
 
+export async function getEnglishMeaning(text: string): Promise<{meaning: string}> {
+  if (!text.trim()) {
+    return { meaning: "" };
+  }
+  try {
+    const result = await getDictionaryEntry({ word: text });
+    return { meaning: result.englishDefinition };
+  } catch (error) {
+    console.error("Error fetching English meaning:", error);
+    throw new Error("Failed to get English meaning from the AI model.");
+  }
+}
+
 export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp' | 'frenchDefinition' | 'englishDefinition'>): Promise<SavedWord> {
     if (!wordData.fr_line.trim()) {
         throw new Error("Cannot save an empty word.");

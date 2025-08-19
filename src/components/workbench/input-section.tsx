@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { type Rule, RULES, type RuleCategory } from "@/lib/phonetics";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
-import { Volume2, Loader2, Bookmark } from 'lucide-react';
-import { getAudioForText } from '@/app/actions';
+import { Volume2, Loader2, Bookmark, Wand2 } from 'lucide-react';
+import { getAudioForText, getEnglishMeaning } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -61,6 +61,7 @@ export function InputSection({
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [userMeaning, setUserMeaning] = useState("");
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const { toast } = useToast();
   const gridCols = showArabic ? "grid-cols-3" : "grid-cols-2";
 
@@ -95,6 +96,24 @@ export function InputSection({
       setIsPlaying(false);
     }
   };
+
+  const handleSuggestMeaning = async () => {
+    if (!text.trim()) return;
+    setIsSuggesting(true);
+    try {
+        const { meaning } = await getEnglishMeaning(text);
+        setUserMeaning(meaning);
+    } catch (error) {
+        console.error(error);
+        toast({
+            variant: "destructive",
+            title: "AI Error",
+            description: "Could not suggest a meaning.",
+        });
+    } finally {
+        setIsSuggesting(false);
+    }
+  }
 
   const renderTextWithUnderlines = (inputText: string) => {
     return inputText.split(/(\s+)/).map((word, i) => {
@@ -155,12 +174,18 @@ export function InputSection({
         </div>
         <div className="space-y-2">
             <Label htmlFor="user-meaning">Your English meaning (optional)</Label>
-            <Input
-                id="user-meaning"
-                value={userMeaning}
-                onChange={(e) => setUserMeaning(e.target.value)}
-                placeholder="e.g., 'Hello, how are you?'"
-            />
+            <div className="flex items-center gap-2">
+                <Input
+                    id="user-meaning"
+                    value={userMeaning}
+                    onChange={(e) => setUserMeaning(e.target.value)}
+                    placeholder="e.g., 'Hello, how are you?'"
+                />
+                <Button variant="outline" size="icon" onClick={handleSuggestMeaning} disabled={!text.trim() || isSuggesting}>
+                    {isSuggesting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4" />}
+                    <span className="sr-only">Suggest meaning</span>
+                </Button>
+            </div>
         </div>
         <Button onClick={handleSave} disabled={!text.trim() || isSaving}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bookmark className="mr-2 h-4 w-4" />}
