@@ -64,7 +64,7 @@ export async function getEnglishMeaning(text: string): Promise<{meaning: string}
   }
 }
 
-export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp' | 'frenchDefinition' | 'englishDefinition'>): Promise<SavedWord> {
+export async function saveWordToRuleBook(wordData: Pick<SavedWord, 'fr_line' | 'en_line' | 'ali_respell'>): Promise<SavedWord> {
     if (!wordData.fr_line.trim()) {
         throw new Error("Cannot save an empty word.");
     }
