@@ -4,7 +4,6 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import {
-  Examples,
   SepKind,
   SEP_MAP,
   transformWord,
@@ -15,10 +14,9 @@ import {
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
 import { RuleBook, type SavedWord } from "./workbench/rule-book";
-import { AiCoach } from "./workbench/ai-coach";
 import { saveWordToRuleBook, getRuleBookWords, deleteWordFromRuleBook } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { BookMarked, Loader2 } from "lucide-react";
 
 export function AliRespeakerClient() {
@@ -125,30 +123,27 @@ export function AliRespeakerClient() {
         onSeparatorChange={setSeparator}
       />
       
-      <main className="container mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-2 space-y-8">
-                <InputSection
-                    text={text}
-                    onTextChange={setText}
-                    lines={lines}
-                    showArabic={showArabic}
-                    onSaveWord={handleSaveWord}
-                    isSaving={isSaving}
-                />
-                
-                <Card className="bg-background/50">
-                    <CardHeader>
-                        <CardTitle className="font-headline text-lg flex items-center gap-2">
-                          <BookMarked className="w-5 h-5 text-primary" />
-                          Your Saved Words
-                        </CardTitle>
-                        <CardDescription>
-                          Your personal collection of words and phrases.
-                        </CardDescription>
-                    </CardHeader>
-                </Card>
-
+      <main className="container mx-auto p-4 space-y-8">
+        <InputSection
+            text={text}
+            onTextChange={setText}
+            lines={lines}
+            showArabic={showArabic}
+            onSaveWord={handleSaveWord}
+            isSaving={isSaving}
+        />
+        
+        <Card className="bg-background/50">
+            <CardHeader>
+                <CardTitle className="font-headline text-lg flex items-center gap-2">
+                  <BookMarked className="w-5 h-5 text-primary" />
+                  Your Saved Words
+                </CardTitle>
+                <CardDescription>
+                  Your personal collection of words and phrases. Analyze them further with the AI Coach tools inside each card.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
                 {isClient ? <RuleBook savedWords={savedWords} onDeleteWord={handleDeleteWord} /> : (
                     <div className="text-center py-8">
                         <Loader2 className="mx-auto h-12 w-12 text-muted-foreground/50 animate-spin" />
@@ -157,11 +152,8 @@ export function AliRespeakerClient() {
                         </p>
                     </div>
                 )}
-            </div>
-            <div className="lg:col-span-1">
-                <AiCoach text={text} />
-            </div>
-        </div>
+            </CardContent>
+        </Card>
       </main>
     </div>
   );
