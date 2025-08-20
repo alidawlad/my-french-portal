@@ -1,5 +1,5 @@
-
-import { config } from 'dotenv';
+// src/ai/dev.ts
+import {config} from 'dotenv';
 config();
 
 import '@/ai/flows/suggest-phonetic-corrections.ts';

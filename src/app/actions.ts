@@ -44,6 +44,7 @@ export async function getAudioForText(input: TextToSpeechInput): Promise<TextToS
     return result;
   } catch (error) {
     console.error("Error fetching audio for text:", error);
+    // Return empty audio string on failure to prevent app crash on client.
     return { audio: "" };
   }
 }
