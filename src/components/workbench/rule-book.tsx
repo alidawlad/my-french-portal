@@ -18,8 +18,8 @@ export type SavedWord = {
   fr_line: string;
   en_line: string; // User-provided meaning
   ali_respell: string; // Generated respelling
-  frenchDefinition: string;
-  englishDefinition: string;
+  frenchDefinition?: string;
+  englishDefinition?: string;
   timestamp: Date;
 };
 

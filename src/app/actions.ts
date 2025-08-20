@@ -7,7 +7,7 @@ import { ruleAssistant, type RuleAssistantInput, type RuleAssistantOutput } from
 import { textToSpeech, type TextToSpeechInput, type TextToSpeechOutput } from '@/ai/flows/text-to-speech-flow';
 import { getDictionaryEntry, type DictionaryInput, type DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import type { SavedWord } from '@/components/workbench/rule-book';
 
 export async function getPhoneticSuggestions(text: string): Promise<SuggestPhoneticCorrectionsOutput> {
@@ -69,18 +69,17 @@ export async function saveWordToRuleBook(wordData: Pick<SavedWord, 'fr_line' | '
         throw new Error("Cannot save an empty word.");
     }
     try {
-        const newWord: Omit<SavedWord, 'id'> = {
+        const newWord = {
             ...wordData,
-            frenchDefinition: "",
-            englishDefinition: "",
-            timestamp: new Date(),
+            timestamp: serverTimestamp(), // Use Firestore server timestamp
         };
 
         const docRef = await addDoc(collection(db, "rulebook"), newWord);
 
         return {
             id: docRef.id,
-            ...newWord
+            ...wordData,
+            timestamp: new Date(), // Return a client-side date for immediate UI update
         };
     } catch (error) {
         console.error("Error saving word to Rule Book:", error);
@@ -96,14 +95,16 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
         const words: SavedWord[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            // Firestore timestamps need to be converted to JS Date objects
+            const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
             words.push({
                 id: doc.id,
                 fr_line: data.fr_line,
                 en_line: data.en_line,
                 ali_respell: data.ali_respell,
-                frenchDefinition: data.frenchDefinition || "", // Ensure fields exist
-                englishDefinition: data.englishDefinition || "", // Ensure fields exist
-                timestamp: data.timestamp.toDate(),
+                frenchDefinition: data.frenchDefinition || "",
+                englishDefinition: data.englishDefinition || "",
+                timestamp: timestamp,
             });
         });
         return words;
