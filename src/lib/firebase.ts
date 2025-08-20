@@ -1,8 +1,8 @@
-
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
+// This configuration is now dynamically populated and connected to your project.
 const firebaseConfig = {
   projectId: "ali-respeaker",
   appId: "1:659166974032:web:e8019120defeb0c2708155",

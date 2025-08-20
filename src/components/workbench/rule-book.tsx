@@ -1,4 +1,3 @@
-
 // src/components/workbench/rule-book.tsx
 "use client";
 
