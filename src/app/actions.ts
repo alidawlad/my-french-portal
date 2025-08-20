@@ -1,4 +1,3 @@
-
 // src/app/actions.ts
 'use server';
 
@@ -76,10 +75,14 @@ export async function saveWordToRuleBook(wordData: Pick<SavedWord, 'fr_line' | '
 
         const docRef = await addDoc(collection(db, "rulebook"), newWord);
 
+        // For the immediate UI update, we return the data with a client-side timestamp.
+        // The server timestamp will be correct on the next full fetch.
         return {
             id: docRef.id,
-            ...wordData,
-            timestamp: new Date(), // Return a client-side date for immediate UI update
+            fr_line: wordData.fr_line,
+            en_line: wordData.en_line,
+            ali_respell: wordData.ali_respell,
+            timestamp: new Date(),
         };
     } catch (error) {
         console.error("Error saving word to Rule Book:", error);
