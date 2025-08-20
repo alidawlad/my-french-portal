@@ -30,13 +30,16 @@ export async function getDictionaryEntry(input: DictionaryInput): Promise<Dictio
 const dictionaryPrompt = ai.definePrompt({
   name: 'dictionaryPrompt',
   input: {schema: DictionaryInputSchema},
-  output: {schema: DictionaryOutputSchema},
   prompt: `You are a helpful bilingual dictionary.
   
   For the given French word or phrase, provide a concise one-sentence definition in both French and English.
   
   For the English definition, provide only the direct translation or meaning. Do not wrap it in quotation marks.
   For example, if the word is "bonjour", the English definition should be "Hello", not ""Hello"".
+
+  Format your response as:
+  FR: [French definition]
+  EN: [English definition]
 
   Word: "{{word}}"
   `,
@@ -49,7 +52,19 @@ const dictionaryFlow = ai.defineFlow(
     outputSchema: DictionaryOutputSchema,
   },
   async (input) => {
-    const {output} = await dictionaryPrompt(input);
-    return output!;
+    const {text} = await ai.generate({
+        prompt: await dictionaryPrompt.render({input}),
+    });
+    
+    const frenchMatch = text.match(/FR: (.*)/);
+    const englishMatch = text.match(/EN: (.*)/);
+
+    const frenchDefinition = frenchMatch ? frenchMatch[1].trim() : "Could not determine French definition.";
+    const englishDefinition = englishMatch ? englishMatch[1].trim() : "Could not determine English definition.";
+
+    return {
+        frenchDefinition,
+        englishDefinition,
+    };
   }
 );
