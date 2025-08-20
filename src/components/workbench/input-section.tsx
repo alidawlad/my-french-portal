@@ -283,7 +283,17 @@ export function InputSection({
               </div>
             )}
             
-            {renderAiResponse(analysis.definitions)}
+            {analysis.definitions && (
+              <div className="space-y-2 mt-2 p-3 bg-background/50 rounded-lg border">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    {analysis.definitions.frenchDefinition && <p><strong className="font-medium text-foreground/90">FR:</strong> {analysis.definitions.frenchDefinition}</p>}
+                    {analysis.definitions.englishDefinition && <p><strong className="font-medium text-foreground/90">EN:</strong> {analysis.definitions.englishDefinition}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
             {renderAiResponse(analysis.explain_phonetics)}
             {renderAiResponse(analysis.explain_grammar)}
             {renderAiResponse(analysis.find_similar)}
