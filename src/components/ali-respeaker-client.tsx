@@ -19,7 +19,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { BookMarked, Loader2 } from "lucide-react";
 
 export function AliRespeakerClient() {
-  const [text, setText] = useState("");
+  const [text, setText] = useState("S'il vous plaît.");
   const [showArabic, setShowArabic] = useState(false);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
@@ -48,7 +48,7 @@ export function AliRespeakerClient() {
   }, [toast]);
 
  const { lines } = useMemo(() => {
-    const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
+    const words = text.split(/(\s+|(?=[.,!?])|(?<=['’]))/u).filter(Boolean);
     const outEN: string[] = [];
     const outAR: string[] = [];
     const sep = separator === 'none' ? '' : SEP_MAP[separator] ?? '-';
@@ -65,7 +65,7 @@ export function AliRespeakerClient() {
     });
 
     return {
-      lines: { en: outEN.join(""), ar: outAR.join("") },
+      lines: { en: outEN.join("").replace(/\s+([.,!?])/g, '$1'), ar: outAR.join("").replace(/\s+([.,!?])/g, '$1') },
     };
   }, [text, separator]);
 
