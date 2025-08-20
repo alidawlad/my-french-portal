@@ -8,6 +8,7 @@ import {
   joinTokensEnWith,
   joinTokens,
   toArabic,
+  SEP_MAP,
 } from "@/lib/phonetics";
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
@@ -38,7 +39,7 @@ export function AliRespeakerClient() {
         toast({
           variant: "destructive",
           title: "Load Failed",
-          description: "Could not load your Rule Book from the database. Please ensure Firestore is enabled in your Firebase project.",
+          description: "Could not load your Rule Book. Please ensure Firestore is enabled in your Firebase project.",
         });
       } finally {
         setIsLoadingWords(false);
@@ -47,19 +48,20 @@ export function AliRespeakerClient() {
     fetchWords();
   }, [toast]);
 
-  const { lines } = useMemo(() => {
+ const { lines } = useMemo(() => {
     const words = text.split(/(\s+|[^\p{L}\p{P}]+)/u).filter(Boolean);
     const outEN: string[] = [];
     const outAR: string[] = [];
+    const sep = separator === 'none' ? '' : SEP_MAP[separator] ?? '-';
     
     words.forEach((w) => {
-      const tokens = transformWord(w);
        if (!/[\p{L}]/u.test(w)) {
         outEN.push(w);
         outAR.push(w);
         return;
       }
-      outEN.push(joinTokensEnWith(tokens, separator));
+      const tokens = transformWord(w);
+      outEN.push(joinTokensEnWith(tokens, sep));
       outAR.push(joinTokens(tokens, toArabic));
     });
 

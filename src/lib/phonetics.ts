@@ -97,7 +97,8 @@ const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous
 
 const COMMON_FIXES: Record<string, string> = {
     "cava": "ça va",
-    "ca va": "ça va",
+    "ca va": "sa va",
+    "ça va": "sa va",
     "bein": "bien",
 };
 
@@ -204,7 +205,7 @@ export const transformWord = (wordRaw: string): Token[] => {
   lw = lw.replace(/ou/g, "{OO}");
 
   // Consonant clusters & special consonants
-  lw = lw.replace(/ch/g, "{SH}");
+  lw = lw.replace(/ch/g, "sh"); // Direct replacement instead of token
   lw = lw.replace(/gn/g, "{NY}");
   lw = lw.replace(/j/g, "{ZH}");
   lw = lw.replace(/g(?=[eéiïy])/g, "{ZH}");
@@ -241,7 +242,6 @@ export const transformWord = (wordRaw: string): Token[] => {
         case "IN_NAS": tokens.push("EH~"); break;
         case "UN_NAS": tokens.push("UH~"); break;
         case "Y_GLIDE": tokens.push("Y"); break;
-        case "SH": tokens.push("SH"); break;
         case "NY": tokens.push("NY"); break;
         case "ZH": tokens.push("ZH"); break;
         case "S": tokens.push("S"); break;
@@ -309,7 +309,3 @@ export const joinTokensEnWith = (tokens: Token[], sep: string) => tokens.map(toE
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
-
-    
-
-    
