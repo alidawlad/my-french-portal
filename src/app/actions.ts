@@ -6,8 +6,8 @@ import { ruleAssistant, type RuleAssistantInput, type RuleAssistantOutput } from
 import { textToSpeech, type TextToSpeechInput, type TextToSpeechOutput } from '@/ai/flows/text-to-speech-flow';
 import { getDictionaryEntry, type DictionaryInput, type DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import type { SavedWord } from '@/components/workbench/rule-book';
+import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import type { SavedWord, AIAnalysis } from '@/components/workbench/rule-book';
 
 export async function getPhoneticSuggestions(text: string): Promise<SuggestPhoneticCorrectionsOutput> {
   if (!text.trim()) {
@@ -44,44 +44,39 @@ export async function getAudioForText(input: TextToSpeechInput): Promise<TextToS
     return result;
   } catch (error) {
     console.error("Error fetching audio for text:", error);
-    // Return empty audio object on failure to prevent app crash.
-    // The client will handle showing a toast notification.
     return { audio: "" };
   }
 }
 
-export async function getEnglishMeaning(text: string): Promise<{meaning: string}> {
+export async function getDictionaryDefinitions(text: string): Promise<DictionaryOutput> {
   if (!text.trim()) {
-    return { meaning: "" };
+    return { frenchDefinition: "", englishDefinition: "" };
   }
   try {
     const result = await getDictionaryEntry({ word: text });
-    return { meaning: result.englishDefinition };
+    return result;
   } catch (error) {
-    console.error("Error fetching English meaning:", error);
-    throw new Error("Failed to get English meaning from the AI model.");
+    console.error("Error fetching dictionary definitions:", error);
+    throw new Error("Failed to get definitions from the AI model.");
   }
 }
 
-export async function saveWordToRuleBook(wordData: Pick<SavedWord, 'fr_line' | 'en_line' | 'ali_respell'>): Promise<SavedWord> {
+
+export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp'>): Promise<SavedWord> {
     if (!wordData.fr_line.trim()) {
         throw new Error("Cannot save an empty word.");
     }
     try {
         const newWord = {
             ...wordData,
-            timestamp: serverTimestamp(), // Use Firestore server timestamp
+            timestamp: serverTimestamp(),
         };
 
         const docRef = await addDoc(collection(db, "rulebook"), newWord);
-
-        // For the immediate UI update, we return the data with a client-side timestamp.
-        // The server timestamp will be correct on the next full fetch.
+        
         return {
             id: docRef.id,
-            fr_line: wordData.fr_line,
-            en_line: wordData.en_line,
-            ali_respell: wordData.ali_respell,
+            ...wordData,
             timestamp: new Date(),
         };
     } catch (error) {
@@ -98,15 +93,13 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
         const words: SavedWord[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            // Firestore timestamps need to be converted to JS Date objects
             const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
             words.push({
                 id: doc.id,
                 fr_line: data.fr_line,
                 en_line: data.en_line,
                 ali_respell: data.ali_respell,
-                frenchDefinition: data.frenchDefinition || "",
-                englishDefinition: data.englishDefinition || "",
+                analysis: data.analysis || {}, // Ensure analysis object exists
                 timestamp: timestamp,
             });
         });
@@ -126,26 +119,26 @@ export async function deleteWordFromRuleBook(wordId: string): Promise<void> {
     }
 }
 
-// New function to get definitions on demand
-export async function getDefinitionsForWord(wordId: string, word: string): Promise<DictionaryOutput> {
-    if (!word.trim()) {
-        return { frenchDefinition: "", englishDefinition: "" };
-    }
+export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial<AIAnalysis>): Promise<void> {
+    if (!wordId) throw new Error("Word ID is required.");
     try {
-        const result = await getDictionaryEntry({ word });
-        
-        // Update the document in Firestore
         const wordRef = doc(db, "rulebook", wordId);
+        
+        // To safely update nested objects in Firestore, we use dot notation.
+        // We get the existing analysis object first to merge with the new one.
+        const docSnap = await getDoc(wordRef);
+        if (!docSnap.exists()) throw new Error("Word not found.");
+        
+        const existingAnalysis = docSnap.data().analysis || {};
+
+        const newAnalysisData = { ...existingAnalysis, ...analysisUpdate };
+        
         await updateDoc(wordRef, {
-            frenchDefinition: result.frenchDefinition,
-            englishDefinition: result.englishDefinition,
+            analysis: newAnalysisData
         });
 
-        return result;
     } catch (error) {
-        console.error("Error fetching and updating definitions:", error);
-        throw new Error("Failed to get definitions from the AI model.");
+        console.error("Error updating word analysis:", error);
+        throw new Error("Failed to update word analysis in the database.");
     }
 }
-
-    

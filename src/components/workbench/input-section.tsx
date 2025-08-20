@@ -1,4 +1,3 @@
-
 // src/components/workbench/input-section.tsx
 "use client";
 
@@ -9,18 +8,20 @@ import { type Rule, RULES, type RuleCategory } from "@/lib/phonetics";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
 import { Volume2, Loader2, Bookmark, Wand2, Sparkles, BrainCircuit, MessageSquareQuote, ListFilter } from 'lucide-react';
-import { getAudioForText, getEnglishMeaning, getRuleAssistantResponse } from '@/app/actions';
+import { getAudioForText, getDictionaryDefinitions, getRuleAssistantResponse } from '@/app/actions';
 import type { RuleAssistantInput, RuleAssistantOutput } from '@/ai/flows/rule-assistant-flow';
+import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import type { AIAnalysis } from './rule-book';
 
 type InputSectionProps = {
   text: string;
   onTextChange: (value: string) => void;
   lines: { en: string; ar: string };
   showArabic: boolean;
-  onSaveWord: (userMeaning: string) => void;
+  onSaveWord: (wordData: { fr_line: string, en_line: string, ali_respell: string, analysis: AIAnalysis }) => void;
   isSaving: boolean;
 };
 
@@ -34,7 +35,6 @@ const UnderlineColors: Record<RuleCategory, string> = {
 
 const getRuleForWord = (word: string): Rule | undefined => {
     const lw = word.toLowerCase();
-    // Prioritize longer matches first
     const sortedRules = [...RULES].sort((a,b) => {
         const aMatch = lw.match(a.re);
         const bMatch = lw.match(b.re);
@@ -46,9 +46,9 @@ const getRuleForWord = (word: string): Rule | undefined => {
     return sortedRules.find(r => r.re.test(lw));
 }
 
-const actionChips: {label: string; type: RuleAssistantInput['type']; icon: React.ReactNode}[] = [
-    { label: "Explain Grammar", type: "explain_grammar", icon: <BrainCircuit className="w-4 h-4" /> },
+const actionChips: {label: string; type: keyof AIAnalysis; icon: React.ReactNode}[] = [
     { label: "Explain Phonetics", type: "explain_phonetics", icon: <MessageSquareQuote className="w-4 h-4" /> },
+    { label: "Explain Grammar", type: "explain_grammar", icon: <BrainCircuit className="w-4 h-4" /> },
     { label: "Find Similar Words", type: "find_similar", icon: <ListFilter className="w-4 h-4" /> },
 ]
 
@@ -62,10 +62,8 @@ export function InputSection({
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [userMeaning, setUserMeaning] = useState("");
-  const [isSuggesting, setIsSuggesting] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResponse, setAiResponse] = useState<any | null>(null);
-  const [lastQuery, setLastQuery] = useState<{query: string, type: RuleAssistantInput['type'] } | null>(null);
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<AIAnalysis>({});
   const { toast } = useToast();
   const gridCols = showArabic ? "grid-cols-3" : "grid-cols-2";
 
@@ -103,10 +101,11 @@ export function InputSection({
 
   const handleSuggestMeaning = async () => {
     if (!text.trim()) return;
-    setIsSuggesting(true);
+    setIsLoading('definitions');
     try {
-        const { meaning } = await getEnglishMeaning(text);
-        setUserMeaning(meaning);
+        const definitions = await getDictionaryDefinitions(text);
+        setUserMeaning(definitions.englishDefinition);
+        setAnalysis(prev => ({...prev, definitions}));
     } catch (error) {
         console.error(error);
         toast({
@@ -115,28 +114,25 @@ export function InputSection({
             description: "Could not suggest a meaning.",
         });
     } finally {
-        setIsSuggesting(false);
+        setIsLoading(null);
     }
   }
 
-  const handleAiQuery = async (type: RuleAssistantInput['type']) => {
-    const query = text.trim().split(/\s+/).slice(-2).join(' ');
-    if (!query.trim()) {
+  const handleAiQuery = async (type: 'explain_grammar' | 'explain_phonetics' | 'find_similar') => {
+    if (!text.trim()) {
       toast({ variant: "destructive", title: "Empty Text", description: "Please enter some text to analyze." });
       return;
     }
-    setAiLoading(true);
-    setAiResponse(null);
-    setLastQuery({ query, type });
+    setIsLoading(type);
 
     try {
-      const result = await getRuleAssistantResponse({ text, query, type });
-      setAiResponse(JSON.parse(result.explanation));
+      const result = await getRuleAssistantResponse({ text, query: text.trim(), type });
+      setAnalysis(prev => ({...prev, [type]: JSON.parse(result.explanation)}));
     } catch (error) {
       toast({ variant: "destructive", title: "AI Error", description: "Could not get a response from the AI." });
       console.error(error);
     } finally {
-      setAiLoading(false);
+      setIsLoading(null);
     }
   };
 
@@ -160,9 +156,36 @@ export function InputSection({
   }
 
   const handleSave = () => {
-    onSaveWord(userMeaning);
-    setUserMeaning(""); // Clear input after saving
+    onSaveWord({
+      fr_line: text,
+      en_line: userMeaning,
+      ali_respell: lines.en,
+      analysis,
+    });
+    setUserMeaning("");
+    setAnalysis({});
   }
+  
+  const renderAiResponse = (response: any) => {
+    if (!response) return null;
+    return (
+        <div className="space-y-2 mt-2 p-3 bg-background/50 rounded-lg border">
+           <div className="flex items-start gap-3">
+              <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                {response.summary && <p className="font-semibold">{response.summary}</p>}
+                {response.details && <p className="mt-1 text-foreground/80">{response.details}</p>}
+                {response.pattern && <p className="font-semibold">{response.pattern}</p>}
+                {response.words && (
+                  <ul className="list-disc list-inside mt-1 text-foreground/80">
+                    {response.words.map((w: string, i: number) => <li key={i}>{w}</li>)}
+                  </ul>
+                )}
+              </div>
+            </div>
+        </div>
+    );
+  };
 
   return (
     <Card>
@@ -170,7 +193,7 @@ export function InputSection({
         <div className="flex justify-between items-center">
           <div>
             <CardTitle className="font-headline text-xl">Workbench</CardTitle>
-            <CardDescription>Type French text to see it respelled and analyzed.</CardDescription>
+            <CardDescription>Type French text, get analysis, and save to your Rule Book.</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -179,7 +202,11 @@ export function InputSection({
           <Textarea
             id="french-input"
             value={text}
-            onChange={(e) => onTextChange(e.target.value)}
+            onChange={(e) => {
+              onTextChange(e.target.value);
+              setAnalysis({}); // Reset analysis on new text
+              setUserMeaning("");
+            }}
             rows={2}
             className="mt-1 resize-y bg-card text-lg"
             placeholder="Type or paste French text here..."
@@ -194,9 +221,9 @@ export function InputSection({
                     onChange={(e) => setUserMeaning(e.target.value)}
                     placeholder="e.g., 'Hello, how are you?'"
                 />
-                <Button variant="outline" size="icon" onClick={handleSuggestMeaning} disabled={!text.trim() || isSuggesting}>
-                    {isSuggesting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4" />}
-                    <span className="sr-only">Suggest meaning</span>
+                <Button variant="outline" size="icon" onClick={handleSuggestMeaning} disabled={!text.trim() || !!isLoading}>
+                    {isLoading === 'definitions' ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4" />}
+                    <span className="sr-only">Suggest meaning & definition</span>
                 </Button>
             </div>
         </div>
@@ -228,7 +255,6 @@ export function InputSection({
           )}
         </div>
         
-        {/* Integrated AI Coach */}
         <div className="pt-4 space-y-2">
             <Label className="text-sm font-medium text-muted-foreground">AI Quick Analysis</Label>
             <div className="flex flex-wrap gap-2">
@@ -237,10 +263,10 @@ export function InputSection({
                         key={chip.type}
                         variant="outline"
                         size="sm"
-                        onClick={() => handleAiQuery(chip.type)}
-                        disabled={aiLoading || !text.trim()}
+                        onClick={() => handleAiQuery(chip.type as any)}
+                        disabled={!!isLoading || !text.trim()}
                     >
-                        {aiLoading && lastQuery?.type === chip.type ? (
+                        {isLoading === chip.type ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                             <span className="mr-2">{chip.icon}</span>
@@ -250,39 +276,19 @@ export function InputSection({
                 ))}
             </div>
 
-            {aiLoading && (
+            {isLoading && !Object.values(analysis).some(v => v) && (
               <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <p className="ml-2">AI is thinking...</p>
               </div>
             )}
-
-            {aiResponse && (
-                <div className="space-y-2 mt-4 p-3 bg-background/50 rounded-lg border">
-                    {lastQuery && (
-                        <div className="text-xs font-semibold text-muted-foreground">
-                            For "{lastQuery.query}"...
-                        </div>
-                    )}
-                   <div className="flex items-start gap-3">
-                      <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                      <div className="text-sm">
-                        {aiResponse.summary && <p className="font-semibold">{aiResponse.summary}</p>}
-                        {aiResponse.details && <p className="mt-1 text-foreground/80">{aiResponse.details}</p>}
-                        {aiResponse.pattern && <p className="font-semibold">{aiResponse.pattern}</p>}
-                        {aiResponse.words && (
-                          <ul className="list-disc list-inside mt-1 text-foreground/80">
-                            {aiResponse.words.map((w: string, i: number) => <li key={i}>{w}</li>)}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                </div>
-            )}
+            
+            {renderAiResponse(analysis.definitions)}
+            {renderAiResponse(analysis.explain_phonetics)}
+            {renderAiResponse(analysis.explain_grammar)}
+            {renderAiResponse(analysis.find_similar)}
         </div>
       </CardContent>
     </Card>
   );
 }
-
-    

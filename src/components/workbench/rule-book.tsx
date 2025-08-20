@@ -4,37 +4,45 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getRuleAssistantResponse, getDefinitionsForWord } from "@/app/actions";
+import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis } from "@/app/actions";
 import type { RuleAssistantInput } from "@/ai/flows/rule-assistant-flow";
+import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from "@/hooks/use-toast";
 import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, BookOpen } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
 
-export type SavedWord = {
-  id: string;
-  fr_line: string;
-  en_line: string; // User-provided meaning
-  ali_respell: string; // Generated respelling
-  frenchDefinition?: string;
-  englishDefinition?: string;
-  timestamp: Date;
-};
-
-type RuleBookProps = {
-  savedWords: SavedWord[];
-  onDeleteWord: (id: string) => void;
-};
-
-type AIResponse = {
+export type AIResponse = {
   summary?: string;
   details?: string;
   pattern?: string;
   words?: string[];
 }
 
-export function RuleBook({ savedWords, onDeleteWord }: RuleBookProps) {
+export type AIAnalysis = {
+    definitions?: DictionaryOutput;
+    explain_phonetics?: AIResponse;
+    explain_grammar?: AIResponse;
+    find_similar?: AIResponse;
+};
+
+export type SavedWord = {
+  id: string;
+  fr_line: string;
+  en_line: string; // User-provided meaning
+  ali_respell: string; // Generated respelling
+  analysis: AIAnalysis;
+  timestamp: Date;
+};
+
+type RuleBookProps = {
+  savedWords: SavedWord[];
+  onDeleteWord: (id: string) => void;
+  onUpdateWord: (word: SavedWord) => void;
+};
+
+export function RuleBook({ savedWords, onDeleteWord, onUpdateWord }: RuleBookProps) {
   if (savedWords.length === 0) {
     return (
       <div className="text-center py-8 border rounded-lg border-dashed">
@@ -52,21 +60,20 @@ export function RuleBook({ savedWords, onDeleteWord }: RuleBookProps) {
   return (
     <div className="space-y-4">
       {savedWords.map((word) => (
-        <SavedWordCard key={word.id} word={word} onDeleteWord={onDeleteWord} />
+        <SavedWordCard key={word.id} word={word} onDeleteWord={onDeleteWord} onUpdateWord={onUpdateWord} />
       ))}
     </div>
   );
 }
 
 
-function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; onDeleteWord: (id: string) => void }) {
-  const [word, setWord] = useState(initialWord);
-  const [loading, setLoading] = useState<string | null>(null); // Stores "type" or "definitions"
-  const [responses, setResponses] = useState<Record<string, AIResponse>>({});
+function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (word: SavedWord) => void }) {
+  const [loading, setLoading] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+  const analysis = word.analysis || {};
 
-  const handleAiQuery = async (type: RuleAssistantInput['type']) => {
+  const handleAiQuery = async (type: 'explain_phonetics' | 'explain_grammar' | 'find_similar') => {
     setLoading(type);
     try {
       const result = await getRuleAssistantResponse({
@@ -75,7 +82,11 @@ function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; o
         type,
       });
       const parsedExplanation = JSON.parse(result.explanation);
-      setResponses(prev => ({ ...prev, [type]: parsedExplanation }));
+      const newAnalysis = { ...analysis, [type]: parsedExplanation };
+
+      await updateWordAnalysis(word.id, { [type]: parsedExplanation });
+      onUpdateWord({ ...word, analysis: newAnalysis });
+      
     } catch (error) {
       console.error(error);
       toast({ variant: "destructive", title: "AI Error", description: "Could not get an explanation." });
@@ -85,11 +96,14 @@ function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; o
   };
 
   const handleFetchDefinitions = async () => {
-    if (word.frenchDefinition && word.englishDefinition) return; // Don't re-fetch
+    if (analysis.definitions) return;
     setLoading('definitions');
     try {
-        const definitions = await getDefinitionsForWord(word.id, word.fr_line);
-        setWord(prev => ({ ...prev, ...definitions }));
+        const definitions = await getDictionaryDefinitions(word.fr_line);
+        const newAnalysis = { ...analysis, definitions };
+        
+        await updateWordAnalysis(word.id, { definitions });
+        onUpdateWord({ ...word, analysis: newAnalysis });
     } catch (error) {
         console.error(error);
         toast({ variant: "destructive", title: "AI Error", description: "Could not fetch definitions." });
@@ -160,12 +174,12 @@ function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; o
             <Badge variant="secondary">Ali Respell</Badge>
             <p className="text-md tracking-wide font-medium text-muted-foreground mt-1">{word.ali_respell}</p>
           </div>
-          {(word.frenchDefinition || word.englishDefinition) && (
+          {analysis.definitions && (
             <div>
                 <Badge variant="secondary">Dictionary</Badge>
                  <div className="text-sm space-y-1 text-foreground/80 mt-1">
-                    {word.englishDefinition && <p><strong className="font-medium text-foreground/90">EN:</strong> {word.englishDefinition}</p>}
-                    {word.frenchDefinition && <p><strong className="font-medium text-foreground/90">FR:</strong> {word.frenchDefinition}</p>}
+                    {analysis.definitions.englishDefinition && <p><strong className="font-medium text-foreground/90">EN:</strong> {analysis.definitions.englishDefinition}</p>}
+                    {analysis.definitions.frenchDefinition && <p><strong className="font-medium text-foreground/90">FR:</strong> {analysis.definitions.frenchDefinition}</p>}
                 </div>
             </div>
           )}
@@ -181,7 +195,7 @@ function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; o
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 pt-2">
             <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={handleFetchDefinitions} disabled={!!loading || (!!word.frenchDefinition && !!word.englishDefinition)} className="text-xs h-7">
+                <Button size="sm" variant="outline" onClick={handleFetchDefinitions} disabled={!!loading || !!analysis.definitions} className="text-xs h-7">
                     {loading === 'definitions' ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <BookOpen className="mr-2 h-3 w-3" />}
                     Get Definitions
                 </Button>
@@ -193,7 +207,7 @@ function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; o
                       size="sm" 
                       variant="outline" 
                       onClick={() => handleAiQuery(type)}
-                      disabled={!!loading || !!responses[type]}
+                      disabled={!!loading || !!analysis[type]}
                       className="text-xs h-7"
                     >
                       {isLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : (
@@ -203,14 +217,14 @@ function SavedWordCard({ word: initialWord, onDeleteWord }: { word: SavedWord; o
                           {type === 'find_similar' && <ListFilter className="mr-2 h-3 w-3" />}
                         </>
                       )}
-                      {type.replace('_', ' ')}
+                      {type.replace(/_/g, ' ')}
                     </Button>
                   )
                 })}
               </div>
-            {renderResponse(responses['explain_phonetics'])}
-            {renderResponse(responses['explain_grammar'])}
-            {renderResponse(responses['find_similar'])}
+            {renderResponse(analysis.explain_phonetics)}
+            {renderResponse(analysis.explain_grammar)}
+            {renderResponse(analysis.find_similar)}
           </CollapsibleContent>
         </Collapsible>
       </CardFooter>

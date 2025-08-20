@@ -12,7 +12,7 @@ import {
 } from "@/lib/phonetics";
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
-import { RuleBook, type SavedWord } from "./workbench/rule-book";
+import { RuleBook, type SavedWord, type AIAnalysis } from "./workbench/rule-book";
 import { saveWordToRuleBook, getRuleBookWords, deleteWordFromRuleBook } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -27,7 +27,6 @@ export function AliRespeakerClient() {
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
-  // Fetch initial words from Firestore
   useEffect(() => {
     const fetchWords = async () => {
       setIsLoadingWords(true);
@@ -70,21 +69,16 @@ export function AliRespeakerClient() {
     };
   }, [text, separator]);
 
-  const handleSaveWord = async (userMeaning: string) => {
-    if (!text.trim() || isSaving) return;
+  const handleSaveWord = async (wordData: { fr_line: string, en_line: string, ali_respell: string, analysis: AIAnalysis }) => {
+    if (!wordData.fr_line.trim() || isSaving) return;
     setIsSaving(true);
     
     try {
-      const newWordData = {
-        fr_line: text,
-        en_line: userMeaning,
-        ali_respell: lines.en,
-      };
-      const newSavedWord = await saveWordToRuleBook(newWordData);
+      const newSavedWord = await saveWordToRuleBook(wordData);
       setSavedWords(prev => [newSavedWord, ...prev]);
       toast({
         title: "Saved!",
-        description: `"${text}" has been added to your Saved Words.`,
+        description: `"${wordData.fr_line}" has been added to your Saved Words.`,
       });
       setText(""); // Clear input after saving
     } catch (error) {
@@ -100,7 +94,6 @@ export function AliRespeakerClient() {
   };
 
   const handleDeleteWord = async (wordId: string) => {
-    // Optimistically update the UI
     const originalWords = savedWords;
     setSavedWords(prev => prev.filter(word => word.id !== wordId));
 
@@ -117,9 +110,12 @@ export function AliRespeakerClient() {
         title: "Delete Failed",
         description: "Could not delete the word. Reverting changes."
       });
-      // Revert if the deletion fails
       setSavedWords(originalWords);
     }
+  }
+
+  const handleUpdateWord = (updatedWord: SavedWord) => {
+    setSavedWords(prev => prev.map(w => w.id === updatedWord.id ? updatedWord : w));
   }
 
   return (
@@ -160,7 +156,7 @@ export function AliRespeakerClient() {
                 </p>
               </div>
             ) : (
-              <RuleBook savedWords={savedWords} onDeleteWord={handleDeleteWord} />
+              <RuleBook savedWords={savedWords} onDeleteWord={handleDeleteWord} onUpdateWord={handleUpdateWord} />
             )}
           </CardContent>
         </Card>
