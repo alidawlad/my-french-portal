@@ -147,3 +147,5 @@ export async function getDefinitionsForWord(wordId: string, word: string): Promi
         throw new Error("Failed to get definitions from the AI model.");
     }
 }
+
+    
