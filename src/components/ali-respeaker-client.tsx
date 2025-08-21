@@ -19,7 +19,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { BookMarked, Loader2 } from "lucide-react";
 
 export function AliRespeakerClient() {
-  const [text, setText] = useState("S'il vous plaît.");
+  const [text, setText] = useState("Pouvez-vous m'aider s'il vous plaît?");
   const [showArabic, setShowArabic] = useState(false);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
@@ -48,13 +48,25 @@ export function AliRespeakerClient() {
   }, [toast]);
 
  const { lines } = useMemo(() => {
-    const words = text.split(/(\s+|(?=[.,!?])|(?<=['’]))/u).filter(Boolean);
+    const words = text.split(/(\s+|(?<=[.,!?])|(?=['’]))/u).filter(Boolean);
     const outEN: string[] = [];
     const outAR: string[] = [];
     const sep = separator === 'none' ? '' : SEP_MAP[separator] ?? '-';
     
     words.forEach((w) => {
-       if (!/[\p{L}]/u.test(w)) {
+       if (w.includes('-')) {
+        const subWords = w.split('-');
+        const transformedSubWords = subWords.map(subWord => {
+          const tokens = transformWord(subWord);
+          return joinTokensEnWith(tokens, sep);
+        });
+        outEN.push(transformedSubWords.join(" "));
+        // Just a simple join for arabic for now
+        outAR.push(subWords.map(sw => joinTokens(transformWord(sw), toArabic)).join(" "));
+        return;
+       }
+
+       if (!/[\p{L}'’]/u.test(w)) {
         outEN.push(w);
         outAR.push(w);
         return;

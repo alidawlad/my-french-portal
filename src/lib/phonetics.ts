@@ -165,8 +165,8 @@ export const toEN = (t: Token): string => {
     case "Y": return "y";
     case "R": return "ghr";
     case "AH~": return "ah(n)";
-    case "OH~": return "on";
-    case "EH~": return "in";
+    case "OH~": return "oh(n)";
+    case "EH~": return "eh(n)";
     case "UH~": return "un";
     default: return t.toLowerCase();
   }
@@ -185,11 +185,15 @@ export const transformWord = (wordRaw: string): Token[] => {
       lw = COMMON_FIXES[lw];
   }
   
-  // 1.2 Elisions
+  // A) Rule Patches (ordered)
+  // A.1. Elisions & function words
   lw = lw.replace(/\bc['’]\s*est\b/gi, "{C_EST}");
   lw = lw.replace(/\bs['’]\s*il\b/gi, "{SIL}");
 
-  // 1.5 Nasal Pass
+  // A.2. soften c even across apostrophes
+  lw = lw.replace(/c(?=(?:['’]\s*)?[eéiïy])/g, "{S}");
+  
+  // A.3. Nasal environment guard
   const nasalRegex = /(in|im|yn|ym|ain|ein|an|am|en|em|on|om|un|um)(?=$|[^a-zàâäéèêëîïôöùûüœ]|[bcdfghjklmnpqrstvwxz])/ig;
   lw = lw.replace(nasalRegex, (match) => {
     const m = match.toLowerCase();
@@ -201,35 +205,35 @@ export const transformWord = (wordRaw: string): Token[] => {
   lw = lw.replace(/ien(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{Y_GLIDE}{IN_NAS}");
 
 
-  // Digraphs & Trigraphs Pass
+  // A.4. Digraphs & Trigraphs Pass
   lw = lw.replace(/ç/g, "{S}");
   lw = lw.replace(/œu/g, "{EU}");
   lw = lw.replace(/eau/g, "{OH}");
   lw = lw.replace(/au/g, "{OH}");
   lw = lw.replace(/oi/g, "{WA}");
-  // 1.1 w-glide
-  lw = lw.replace(/ou(?=[iy])/g, "{W}");
+
+  // A.5. w-glide for "oui"
+  lw = lw.replace(/ou(?=[iy])/g, "{W}"); 
   lw = lw.replace(/ou/g, "{OO}");
   
-  // 1.3 Accented /ɛ/
+  // A.6 Accented /ɛ/ in plaît (targeted)
   lw = lw.replace(/aî/gi, "{EH}");
   
-  // 1.6 Verb endings
+  // A.7. Verb endings
   lw = lw.replace(/(?<!['’])(?:ai|ais|ait|aient)(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{EH}");
+  lw = lw.replace(/ez(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{EH}");
 
 
-  // Consonant clusters & special consonants
+  // A.8. Consonant clusters & special consonants
   lw = lw.replace(/ch/g, "sh"); // Direct replacement instead of token
   lw = lw.replace(/gn/g, "{NY}");
   lw = lw.replace(/j/g, "{ZH}");
   lw = lw.replace(/g(?=[eéiïy])/g, "{ZH}");
-  // 1.2 Elision softening
-  lw = lw.replace(/c(?=(?:['’]\s*)?[eéiïy])/g, "{S}");
   lw = lw.replace(/qu/g, "{K}");
   lw = lw.replace(/^h/g, ""); // Only initial 'h' is silent for liaison purposes.
   lw = lw.replace(/th/g, "{T}");
 
-  // Accented vowels
+  // A.9. Accented vowels
   lw = lw.replace(/[é]/g, "{AY}");
   lw = lw.replace(/[èêë]/g, "{EH}");
   lw = lw.replace(/[àâä]/g, "{AH}");
@@ -237,7 +241,7 @@ export const transformWord = (wordRaw: string): Token[] => {
   lw = lw.replace(/[ôö]/g, "{OH}");
   lw = lw.replace(/[ùûü]/g, "{Ü}");
   
-  // 1.4 Schwa hygiene
+  // A.10. Schwa hygiene
   lw = lw.replace(/e(?=r[bcdfghjklmnpqrstvwxyz])/g, "{EH}");
   lw = lw.replace(/e(?=([bcdfghjklmnpqrstvwxyz])\1)/g, "{EH}");
 
@@ -307,7 +311,7 @@ export const transformWord = (wordRaw: string): Token[] => {
     tokens.push(ch.toUpperCase() as Token);
   }
 
-  // 1.7 Final-consonant logic
+  // A.11 Final-consonant logic
   let idx = tokens.length - 1;
   while (idx >= 0 && !/^[A-Z~]+$/i.test(tokens[idx])) idx--;
   
@@ -322,7 +326,6 @@ export const transformWord = (wordRaw: string): Token[] => {
       tokens.splice(idx, 1);
     }
   }
-
 
   return tokens;
 };
