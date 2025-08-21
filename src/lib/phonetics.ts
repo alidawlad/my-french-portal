@@ -334,4 +334,3 @@ export const joinTokensEnWith = (tokens: Token[], sep: string) => tokens.map(toE
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
-
