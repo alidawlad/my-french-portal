@@ -60,6 +60,20 @@ export const RULES: Rule[] = [
   { key: 'finalC', label: "Final consonant usually silent",        re: /[b|d|g|p|s|t|x|z]$/i, category: 'silent'},
 ];
 
+export const getRuleForWord = (word: string): Rule | undefined => {
+    const lw = word.toLowerCase();
+    // Sort rules to prioritize longer matches if regexes could overlap
+    const sortedRules = [...RULES].sort((a,b) => {
+        const aMatch = lw.match(a.re);
+        const bMatch = lw.match(b.re);
+        if (aMatch && bMatch) return bMatch[0].length - aMatch[0].length;
+        if (aMatch) return -1;
+        if (bMatch) return 1;
+        return 0;
+    });
+    return sortedRules.find(r => r.re.test(lw));
+}
+
 export const Examples: Array<{ label: string; text: string }> = [
   { label: "Thomas", text: "Thomas" },
   { label: "William", text: "William" },
@@ -334,3 +348,5 @@ export const joinTokensEnWith = (tokens: Token[], sep: string) => tokens.map(toE
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
+
+    

@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { type Rule, RULES, type RuleCategory } from "@/lib/phonetics";
+import { type Rule, RULES, type RuleCategory, getRuleForWord } from "@/lib/phonetics";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
 import { Volume2, Loader2, Bookmark, Wand2, Sparkles, BrainCircuit, MessageSquareQuote, ListFilter } from 'lucide-react';
@@ -32,19 +32,6 @@ const UnderlineColors: Record<RuleCategory, string> = {
     liaison: "border-green-500",
     silent: "border-gray-500 border-dashed",
 };
-
-const getRuleForWord = (word: string): Rule | undefined => {
-    const lw = word.toLowerCase();
-    const sortedRules = [...RULES].sort((a,b) => {
-        const aMatch = lw.match(a.re);
-        const bMatch = lw.match(b.re);
-        if (aMatch && bMatch) return bMatch[0].length - aMatch[0].length;
-        if (aMatch) return -1;
-        if (bMatch) return 1;
-        return 0;
-    });
-    return sortedRules.find(r => r.re.test(lw));
-}
 
 const actionChips: {label: string; type: keyof AIAnalysis; icon: React.ReactNode}[] = [
     { label: "Explain Phonetics", type: "explain_phonetics", icon: <MessageSquareQuote className="w-4 h-4" /> },
@@ -302,3 +289,5 @@ export function InputSection({
     </Card>
   );
 }
+
+    
