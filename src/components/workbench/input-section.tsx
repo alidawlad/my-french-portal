@@ -23,6 +23,7 @@ type InputSectionProps = {
   showArabic: boolean;
   onSaveWord: (wordData: { fr_line: string, en_line: string, ali_respell: string, analysis: AIAnalysis }) => void;
   isSaving: boolean;
+  enLineTraceComponent: React.ReactNode;
 };
 
 const UnderlineColors: Record<RuleCategory, string> = {
@@ -46,6 +47,7 @@ export function InputSection({
   showArabic,
   onSaveWord,
   isSaving,
+  enLineTraceComponent,
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [userMeaning, setUserMeaning] = useState("");
@@ -232,7 +234,7 @@ export function InputSection({
           </div>
           <div className="rounded-lg border p-3 bg-background/50">
             <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">EN-line (Ali respell)</div>
-            <div className="min-h-[40px] whitespace-pre-wrap break-words text-lg tracking-wide font-medium">{lines.en}</div>
+            <div className="min-h-[40px] whitespace-pre-wrap break-words text-lg tracking-wide font-medium">{enLineTraceComponent}</div>
           </div>
           {showArabic && (
             <div className="rounded-lg border p-3 bg-background/50">

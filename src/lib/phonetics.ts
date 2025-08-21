@@ -2,6 +2,15 @@ export type Token = string;
 export type SepKind = 'hyphen' | 'middot' | 'space' | 'none';
 export type RuleCategory = 'vowel' | 'nasal' | 'special' | 'liaison' | 'silent';
 
+export type TokenTrace = {
+  out: Token;
+  src: string;
+  ruleKey?: string;
+  changed?: boolean;
+  note?: string;
+};
+
+
 export const LETTERS: Array<{ ch: string; nameIPA: string; ali: string; alt?: string; note?: string }> = [
   { ch: "A", nameIPA: "[a]", ali: "aah" },
   { ch: "B", nameIPA: "[be]", ali: "beh", alt: "bé", note: "Aim for /e/ (not English 'bee')." },
@@ -187,6 +196,103 @@ export const toEN = (t: Token): string => {
 };
 
 const isVowel = (c: string) => /[aeiouyàâäéèêëîïôöùûüœ]/i.test(c);
+
+export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
+  let w = wordRaw.normalize("NFC").replace(/[\.,!\?]$/, '');
+  if (!/[\p{L}]/u.test(w)) return [{ src: w, out: w as Token, changed: false }];
+  
+  let lw = w.toLowerCase();
+
+  // L0: Pre-processing & Normalization
+  if (COMMON_FIXES[lw]) {
+      lw = COMMON_FIXES[lw];
+  }
+  
+  const traces: TokenTrace[] = [];
+  let i = 0;
+
+  while(i < lw.length) {
+    const start = i;
+    let end = i + 1;
+    let token: Token | null = null;
+    let ruleKey: string | null = null;
+
+    // This is a simplified transformation logic. A full implementation
+    // would require a more sophisticated state machine or regex-based replacement
+    // that builds the trace alongside the transformation.
+    
+    // Placeholder logic for demonstration:
+    const char = lw[i];
+    
+    // Elisions & function words
+    if (lw.substring(i).match(/^c['’]\s*est\b/i)) {
+      const match = lw.substring(i).match(/^c['’]\s*est\b/i)!;
+      traces.push({ src: match[0], out: 'S', ruleKey: 'cEst', changed: true, note: "c'est -> seh" });
+      traces.push({ src: '', out: 'EH', ruleKey: 'cEst', changed: true, note: "c'est -> seh" });
+      i += match[0].length; continue;
+    }
+    if (lw.substring(i).match(/^s['’]\s*il\b/i)) {
+      const match = lw.substring(i).match(/^s['’]\s*il\b/i)!;
+      traces.push({ src: match[0], out: 'S', ruleKey: 'sIl', changed: true, note: "s'il -> seel" });
+      traces.push({ src: '', out: 'EE', ruleKey: 'sIl', changed: true, note: "s'il -> seel" });
+      traces.push({ src: '', out: 'L', ruleKey: 'sIl', changed: true, note: "s'il -> seel" });
+      i += match[0].length; continue;
+    }
+    
+    // Digraphs
+    if (lw.substring(i, i+2) === 'ou') {
+      if (isVowel(lw[i+2])) {
+        traces.push({src: 'ou', out: 'W', ruleKey: 'wGlide', changed: true, note: "ou+vowel -> w"});
+        i += 2; continue;
+      }
+      traces.push({src: 'ou', out: 'OO', ruleKey: 'ou', changed: true, note: 'ou -> oo'});
+      i+=2; continue;
+    }
+     if (lw.substring(i, i+2) === 'oi') {
+      traces.push({src: 'oi', out: 'WA', ruleKey: 'oi', changed: true, note: 'oi -> wa'});
+      i+=2; continue;
+    }
+    if (lw.substring(i, i+2) === 'ch') {
+      traces.push({src: 'ch', out: 'SH', ruleKey: 'ch', changed: true, note: 'ch -> sh'});
+      i+=2; continue;
+    }
+
+    // Default character mapping
+    const basicTokens = transformWord(char);
+    const outToken = basicTokens.length > 0 ? basicTokens[0] : char.toUpperCase();
+    traces.push({
+        src: char,
+        out: outToken,
+        changed: toEN(outToken) !== char.toLowerCase(),
+        ruleKey: 'charMap'
+    });
+    i++;
+  }
+  
+  // Final consonant logic needs to be re-applied here on the trace
+  let idx = traces.length - 1;
+  while (idx >= 0 && !/^[A-Z~]+$/i.test(traces[idx].out)) idx--;
+  
+  if (idx >= 0) {
+    const lastTrace = traces[idx];
+    const orig = w.toLowerCase();
+    const lastCharMatch = orig.match(/[a-zàâäéèêëîïôöùûüœ](?=[^a-zàâäéèêëîïôöùûüœ]*$)/i);
+    const lastChar = lastCharMatch ? lastCharMatch[0].toLowerCase() : "";
+
+    if (!FINAL_CONSONANT_EXCEPTIONS.has(orig) &&
+        !PRONOUNCED_FINALS.includes(lastChar) &&
+        /^[BDGPSXTZ]$/.test(lastTrace.out)) {
+      lastTrace.out = `(${lastTrace.src})`; // Mark as silent
+      lastTrace.ruleKey = 'finalDrop';
+      lastTrace.changed = true;
+      lastTrace.note = `Silent final consonant: '${lastTrace.src}'`;
+    }
+  }
+
+
+  return traces;
+};
+
 
 export const transformWord = (wordRaw: string): Token[] => {
   let w = wordRaw.normalize("NFC").replace(/[\.,!\?]$/, '');

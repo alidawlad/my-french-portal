@@ -1,14 +1,16 @@
 // src/components/ali-respeaker-client.tsx
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, Fragment } from "react";
 import {
   SepKind,
   transformWord,
-  joinTokensEnWith,
+  transformWordWithTrace,
   joinTokens,
   toArabic,
+  toEN,
   SEP_MAP,
+  type TokenTrace,
 } from "@/lib/phonetics";
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
@@ -17,6 +19,26 @@ import { saveWordToRuleBook, getRuleBookWords, deleteWordFromRuleBook } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { BookMarked, Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+
+
+const TraceColors: Record<string, string> = {
+    vowel: "bg-blue-100 dark:bg-blue-900/50",
+    nasal: "bg-amber-100 dark:bg-amber-900/50",
+    special: "bg-purple-100 dark:bg-purple-900/50",
+    liaison: "bg-green-100 dark:bg-green-900/50",
+    silent: "bg-gray-100 dark:bg-gray-900/50",
+    charMap: "bg-transparent",
+    default: "bg-pink-100 dark:bg-pink-900/50"
+};
+
+const getTraceColor = (trace: TokenTrace) => {
+    if (trace.ruleKey?.includes('nas')) return TraceColors.nasal;
+    if (trace.ruleKey?.includes('Glide') || trace.ruleKey?.includes('Est') || trace.ruleKey?.includes('Il')) return TraceColors.special;
+    if (trace.ruleKey === 'finalDrop') return TraceColors.silent;
+    if (trace.changed) return TraceColors.default;
+    return TraceColors.charMap;
+}
 
 export function AliRespeakerClient() {
   const [text, setText] = useState("Pouvez-vous m'aider s'il vous plaît?");
@@ -47,39 +69,38 @@ export function AliRespeakerClient() {
     fetchWords();
   }, [toast]);
 
- const { lines } = useMemo(() => {
+ const { enTrace, arLine } = useMemo(() => {
     const words = text.split(/(\s+|(?<=[.,!?])|(?=['’]))/u).filter(Boolean);
-    const outEN: string[] = [];
     const outAR: string[] = [];
-    const sep = separator === 'none' ? '' : SEP_MAP[separator] ?? '-';
+    const enTrace: (TokenTrace | string)[] = [];
     
     words.forEach((w) => {
        if (w.includes('-')) {
         const subWords = w.split('-');
-        const transformedSubWords = subWords.map(subWord => {
-          const tokens = transformWord(subWord);
-          return joinTokensEnWith(tokens, sep);
-        });
-        outEN.push(transformedSubWords.join(" "));
-        // Just a simple join for arabic for now
-        outAR.push(subWords.map(sw => joinTokens(transformWord(sw), toArabic)).join(" "));
+        subWords.forEach((subWord, idx) => {
+          enTrace.push(...transformWordWithTrace(subWord));
+          if (idx < subWords.length - 1) {
+            enTrace.push(' '); // Use space for hyphens as per spec
+          }
+          outAR.push(joinTokens(transformWord(subWord), toArabic));
+        })
         return;
        }
 
        if (!/[\p{L}'’]/u.test(w)) {
-        outEN.push(w);
         outAR.push(w);
+        enTrace.push(w);
         return;
       }
-      const tokens = transformWord(w);
-      outEN.push(joinTokensEnWith(tokens, sep));
-      outAR.push(joinTokens(tokens, toArabic));
+      enTrace.push(...transformWordWithTrace(w));
+      outAR.push(joinTokens(transformWord(w), toArabic));
     });
 
     return {
-      lines: { en: outEN.join("").replace(/\s+([.,!?])/g, '$1'), ar: outAR.join("").replace(/\s+([.,!?])/g, '$1') },
+      enTrace,
+      arLine: outAR.join("").replace(/\s+([.,!?])/g, '$1'),
     };
-  }, [text, separator]);
+  }, [text]);
 
   const handleSaveWord = async (wordData: { fr_line: string, en_line: string, ali_respell: string, analysis: AIAnalysis }) => {
     if (!wordData.fr_line.trim() || isSaving) return;
@@ -129,6 +150,47 @@ export function AliRespeakerClient() {
   const handleUpdateWord = (updatedWord: SavedWord) => {
     setSavedWords(prev => prev.map(w => w.id === updatedWord.id ? updatedWord : w));
   }
+  
+  const renderEnLineWithTrace = (trace: (TokenTrace | string)[]) => {
+    const sep = separator === 'none' ? '' : SEP_MAP[separator] ?? '-';
+    let result = [];
+    
+    for(let i=0; i < trace.length; i++) {
+        const item = trace[i];
+        if (typeof item === 'string') {
+            result.push(<span key={`str-${i}`}>{item}</span>);
+            continue;
+        }
+
+        const isSilent = item.out.startsWith('(');
+        const enToken = isSilent ? item.out.slice(1, -1) : toEN(item.out);
+
+        const node = (
+            <TooltipProvider key={`trace-${i}`}>
+                <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                         <span className={`px-0.5 rounded-sm ${isSilent ? 'line-through text-muted-foreground' : getTraceColor(item)}`}>
+                            {enToken}
+                         </span>
+                    </TooltipTrigger>
+                    {item.changed && 
+                        <TooltipContent>
+                            <p className="font-mono text-xs">
+                                <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{enToken}</span>
+                            </p>
+                            {item.note && <p className="text-xs text-muted-foreground">{item.note}</p>}
+                        </TooltipContent>
+                    }
+                </Tooltip>
+            </TooltipProvider>
+        );
+        result.push(node);
+        if(i < trace.length -1 && typeof trace[i+1] !== 'string' && sep) {
+            result.push(<span key={`sep-${i}`}>{sep}</span>);
+        }
+    }
+    return <>{result}</>
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body">
@@ -143,10 +205,11 @@ export function AliRespeakerClient() {
         <InputSection
           text={text}
           onTextChange={setText}
-          lines={lines}
+          lines={{ en: enTrace.map(t => typeof t === 'string' ? t : toEN(t.out)).join(''), ar: arLine }}
           showArabic={showArabic}
           onSaveWord={handleSaveWord}
           isSaving={isSaving}
+          enLineTraceComponent={renderEnLineWithTrace(enTrace)}
         />
         
         <Card className="bg-background/50">
