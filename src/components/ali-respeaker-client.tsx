@@ -15,7 +15,7 @@ import {
 import { WorkbenchHeader } from './workbench/workbench-header';
 import { InputSection } from './workbench/input-section';
 import { RuleBook, type SavedWord, type AIAnalysis } from "./workbench/rule-book";
-import { saveWordToRuleBook, getRuleBookWords, deleteWordFromRuleBook } from "@/app/actions";
+import { saveWordToRuleBook, getRuleBookWords, deleteWordFromRuleBook, updateWordAnalysis } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { BookMarked, Loader2 } from "lucide-react";
@@ -41,7 +41,7 @@ const getTraceColor = (trace: TokenTrace) => {
 }
 
 export function AliRespeakerClient() {
-  const [text, setText] = useState("Pouvez-vous m'aider s'il vous plaît?");
+  const [text, setText] = useState("un deux trois quatre cinq six sept huit neuf dix");
   const [showArabic, setShowArabic] = useState(false);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const [savedWords, setSavedWords] = useState<SavedWord[]>([]);
@@ -74,27 +74,53 @@ export function AliRespeakerClient() {
     const outAR: string[] = [];
     const enTrace: (TokenTrace | string)[] = [];
     
-    words.forEach((w) => {
-       if (w.includes('-')) {
-        const subWords = w.split('-');
+    for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+
+        // Liaison logic for six/dix
+        if ((w.toLowerCase() === 'six' || w.toLowerCase() === 'dix') && i + 1 < words.length) {
+            const nextWord = words.find((next, idx) => idx > i && next.trim());
+            if (nextWord && /^[aeiouyàâäéèêëîïôöùûüœh]/i.test(nextWord)) {
+                const traces = transformWordWithTrace(w);
+                if (traces.length > 0) {
+                   const lastTrace = traces[traces.length - 1];
+                   if (lastTrace.out === 'S') {
+                       lastTrace.out = 'Z‿';
+                       lastTrace.ruleKey = 'sixDixLiaison';
+                       lastTrace.note = `${w} + vowel → liaison with /z/`;
+                       lastTrace.changed = true;
+                   }
+                }
+                enTrace.push(...traces);
+                outAR.push(joinTokens(traces.map(t=>t.out), toArabic));
+                continue;
+            }
+        }
+        
+       if (w.includes('-') || w.includes('–') || w.includes('—')) {
+        const subWords = w.split(/[-–—]/);
         subWords.forEach((subWord, idx) => {
-          enTrace.push(...transformWordWithTrace(subWord));
-          if (idx < subWords.length - 1) {
-            enTrace.push(' '); // Use space for hyphens as per spec
+          if (subWord) {
+            const transformed = transformWordWithTrace(subWord);
+            enTrace.push(...transformed);
+            outAR.push(joinTokens(transformed.map(t=>t.out), toArabic));
           }
-          outAR.push(joinTokens(transformWord(subWord), toArabic));
+          if (idx < subWords.length - 1) {
+            enTrace.push(' ');
+          }
         })
-        return;
+        continue;
        }
 
        if (!/[\p{L}'’]/u.test(w)) {
         outAR.push(w);
         enTrace.push(w);
-        return;
+        continue;
       }
-      enTrace.push(...transformWordWithTrace(w));
-      outAR.push(joinTokens(transformWord(w), toArabic));
-    });
+      const transformed = transformWordWithTrace(w);
+      enTrace.push(...transformed);
+      outAR.push(joinTokens(transformed.map(t=>t.out), toArabic));
+    };
 
     return {
       enTrace,
@@ -163,7 +189,11 @@ export function AliRespeakerClient() {
         }
 
         const isSilent = item.out.startsWith('(');
-        const enToken = isSilent ? item.out.slice(1, -1) : toEN(item.out);
+        let enToken = isSilent ? item.out.slice(1, -1) : toEN(item.out);
+        const isLiaison = enToken.includes('‿');
+        if (isLiaison) {
+            enToken = enToken.replace('‿', '');
+        }
 
         const node = (
             <TooltipProvider key={`trace-${i}`}>
@@ -176,7 +206,7 @@ export function AliRespeakerClient() {
                     {item.changed && 
                         <TooltipContent>
                             <p className="font-mono text-xs">
-                                <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{enToken}</span>
+                                <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{toEN(item.out)}</span>
                             </p>
                             {item.note && <p className="text-xs text-muted-foreground">{item.note}</p>}
                         </TooltipContent>
@@ -185,7 +215,10 @@ export function AliRespeakerClient() {
             </TooltipProvider>
         );
         result.push(node);
-        if(i < trace.length -1 && typeof trace[i+1] !== 'string' && sep) {
+         if (isLiaison) {
+            result.push(<span key={`liaison-${i}`} className="text-green-500">‿</span>)
+        }
+        if(i < trace.length -1 && typeof trace[i+1] !== 'string' && sep && !isLiaison) {
             result.push(<span key={`sep-${i}`}>{sep}</span>);
         }
     }

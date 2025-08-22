@@ -116,7 +116,7 @@ export const SEP_MAP: Record<SepKind, string> = { hyphen: "\u2011", middot: "·"
 // Based on the "CaReFuL" rule. Final C, R, F, L are often pronounced.
 const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l', 'q'];
 // Exceptions to the silent final consonant rule.
-const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'sud', 'anaïs', 'reims']);
+const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'anaïs', 'reims', 'six', 'dix']);
 
 const COMMON_FIXES: Record<string, string> = {
     "cava": "ça va",
@@ -305,63 +305,69 @@ export const transformWord = (wordRaw: string): Token[] => {
       lw = COMMON_FIXES[lw];
   }
   
-  // A) Rule Patches (ordered)
-  // A.1. Elisions & function words
-  lw = lw.replace(/\bc['’]\s*est\b/gi, "{C_EST}");
-  lw = lw.replace(/\bs['’]\s*il\b/gi, "{SIL}");
-
-  // A.2. soften c even across apostrophes
-  lw = lw.replace(/c(?=(?:['’]\s*)?[eéiïy])/g, "{S}");
+  // A) Rule Patches (ordered by spec)
+  if (lw === 'sept') {
+      lw = "set"; // Word exception for sept
+  }
   
+  // A.1. qu -> K
+  lw = lw.replace(/qu/gi, "{K}");
+  // A.2. eu/œu -> EU
+  lw = lw.replace(/œu/gi, "{EU}");
+  lw = lw.replace(/eu/gi, "{EU}");
+
   // A.3. Nasal environment guard
   const nasalRegex = /(in|im|yn|ym|ain|ein|an|am|en|em|on|om|un|um)(?=$|[^a-zàâäéèêëîïôöùûüœ]|[bcdfghjklmnpqrstvwxz])/ig;
   lw = lw.replace(nasalRegex, (match) => {
     const m = match.toLowerCase();
-    if (m.startsWith('o')) return '{ON_NAS}';
-    if (m.startsWith('u')) return '{UN_NAS}';
-    if (['en', 'an', 'am', 'em'].includes(m)) return '{AN_NAS}';
+    if (['on', 'om'].includes(m)) return '{ON_NAS}';
+    if (['un', 'um'].includes(m)) return '{UN_NAS}';
+    if (['an','am','en','em'].includes(m)) return '{AN_NAS}';
     return '{IN_NAS}';
   });
   lw = lw.replace(/ien(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{Y_GLIDE}{IN_NAS}");
 
-
-  // A.4. Digraphs & Trigraphs Pass
+  // A.4. Elisions & function words
+  lw = lw.replace(/\bc['’]\s*est\b/gi, "{C_EST}");
+  lw = lw.replace(/\bs['’]\s*il\b/gi, "{SIL}");
+  lw = lw.replace(/c(?=(?:['’]\s*)?[eéiïy])/g, "{S}"); // soft c across apostrophes
+  
+  // A.5 Digraphs & Trigraphs Pass
   lw = lw.replace(/ç/g, "{S}");
-  lw = lw.replace(/œu/g, "{EU}");
   lw = lw.replace(/eau/g, "{OH}");
   lw = lw.replace(/au/g, "{OH}");
   lw = lw.replace(/oi/g, "{WA}");
+  lw = lw.replace(/ui/g, "{Ü}{EE}");
 
-  // A.5. w-glide for "oui"
+  // A.6. w-glide for "oui"
   lw = lw.replace(/ou(?=[iy])/g, "{W}"); 
   lw = lw.replace(/ou/g, "{OO}");
   
-  // A.6 Accented /ɛ/ in plaît (targeted)
+  // A.7 Accented /ɛ/ in plaît (targeted)
   lw = lw.replace(/aî/gi, "{EH}");
   
-  // A.7. Verb endings
+  // A.8. Verb endings
   lw = lw.replace(/(?<!['’])(?:ai|ais|ait|aient)(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{EH}");
   lw = lw.replace(/ez(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{EH}");
 
 
-  // A.8. Consonant clusters & special consonants
+  // A.9. Consonant clusters & special consonants
   lw = lw.replace(/ch/g, "sh"); // Direct replacement instead of token
   lw = lw.replace(/gn/g, "{NY}");
   lw = lw.replace(/j/g, "{ZH}");
   lw = lw.replace(/g(?=[eéiïy])/g, "{ZH}");
-  lw = lw.replace(/qu/g, "{K}");
   lw = lw.replace(/^h/g, ""); // Only initial 'h' is silent for liaison purposes.
   lw = lw.replace(/th/g, "{T}");
 
-  // A.9. Accented vowels
+  // A.10. Accented vowels
   lw = lw.replace(/[é]/g, "{AY}");
   lw = lw.replace(/[èêë]/g, "{EH}");
   lw = lw.replace(/[àâä]/g, "{AH}");
   lw = lw.replace(/[îï]/g, "{EE}");
   lw = lw.replace(/[ôö]/g, "{OH}");
-  lw = lw.replace(/[ùûü]/g, "{Ü}");
+  lw = lw.replace(/[ùû]/g, "{Ü}"); // note: ü already handled by ui
   
-  // A.10. Schwa hygiene
+  // A.11. Schwa hygiene
   lw = lw.replace(/e(?=r[bcdfghjklmnpqrstvwxyz])/g, "{EH}");
   lw = lw.replace(/e(?=([bcdfghjklmnpqrstvwxyz])\1)/g, "{EH}");
 
@@ -431,7 +437,7 @@ export const transformWord = (wordRaw: string): Token[] => {
     tokens.push(ch.toUpperCase() as Token);
   }
 
-  // A.11 Final-consonant logic
+  // Final-consonant logic (CaReFuL)
   let idx = tokens.length - 1;
   while (idx >= 0 && !/^[A-Z~]+$/i.test(tokens[idx])) idx--;
   
