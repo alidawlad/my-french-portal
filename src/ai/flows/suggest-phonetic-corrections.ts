@@ -53,6 +53,9 @@ const suggestPhoneticCorrectionsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await suggestPhoneticCorrectionsPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error("Received no output from the AI model for phonetic corrections.");
+    }
+    return output;
   }
 );
