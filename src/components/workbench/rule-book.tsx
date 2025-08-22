@@ -4,11 +4,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis } from "@/app/actions";
+import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis, getAudioForText } from "@/app/actions";
 import type { RuleAssistantInput } from "@/ai/flows/rule-assistant-flow";
 import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from "@/hooks/use-toast";
-import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, BookOpen } from "lucide-react";
+import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, BookOpen, Volume2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
@@ -33,6 +33,7 @@ export type SavedWord = {
   en_line: string; // User-provided meaning
   ali_respell: string; // Generated respelling
   analysis: AIAnalysis;
+  audio_data_uri: string | null; // Base64 encoded audio data
   timestamp: Date;
 };
 
@@ -69,6 +70,7 @@ export function RuleBook({ savedWords, onDeleteWord, onUpdateWord }: RuleBookPro
 
 function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (word: SavedWord) => void }) {
   const [loading, setLoading] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const analysis = word.analysis || {};
@@ -112,6 +114,42 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
     }
   };
 
+  const handlePlayAudio = async () => {
+    setIsPlaying(true);
+    let audioDataUri = word.audio_data_uri;
+    
+    try {
+      // If we don't have cached audio, generate and save it
+      if (!audioDataUri) {
+        toast({ title: "Generating Audio...", description: "This may take a moment." });
+        const { audio } = await getAudioForText(word.fr_line);
+        audioDataUri = audio;
+        if (audioDataUri) {
+          await updateWordAnalysis(word.id, { audio_data_uri: audioDataUri });
+          onUpdateWord({ ...word, audio_data_uri: audioDataUri });
+        }
+      }
+
+      if (audioDataUri) {
+        const audio = new Audio(audioDataUri);
+        audio.play();
+        audio.onended = () => setIsPlaying(false);
+        audio.onerror = () => {
+          toast({ variant: "destructive", title: "Error", description: "Could not play audio."});
+          setIsPlaying(false);
+        }
+      } else {
+        toast({ variant: "destructive", title: "Audio Failed", description: "Could not generate or play audio."});
+        setIsPlaying(false);
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Audio Error", description: "An unexpected error occurred." });
+      setIsPlaying(false);
+    }
+  }
+
+
   const renderResponse = (response: AIResponse | undefined) => {
     if (!response) return null;
     return (
@@ -142,8 +180,13 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
     <Card className="flex flex-col">
       <CardHeader>
         <div className="flex justify-between items-start">
-            <div>
-                <CardTitle className="font-headline text-lg">{word.fr_line}</CardTitle>
+            <div className="flex-grow">
+                <div className="flex items-center gap-2">
+                    <CardTitle className="font-headline text-lg">{word.fr_line}</CardTitle>
+                    <Button variant="ghost" size="icon" onClick={handlePlayAudio} disabled={isPlaying} className="h-7 w-7 text-muted-foreground">
+                        {isPlaying ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4"/>}
+                    </Button>
+                </div>
                 {word.en_line && <CardDescription>Your meaning: "{word.en_line}"</CardDescription>}
             </div>
              <AlertDialog>
@@ -157,7 +200,7 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
-                        </AlertDialogDescription>
+                        </Description>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>

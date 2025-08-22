@@ -75,10 +75,12 @@ export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'times
 
         const docRef = await addDoc(collection(db, "rulebook"), newWord);
         
+        // The timestamp from serverTimestamp is resolved on the server, 
+        // so we return a client-side Date object for immediate UI updates.
         return {
             id: docRef.id,
             ...wordData,
-            timestamp: new Date(),
+            timestamp: new Date(), 
         };
     } catch (error) {
         console.error("Error saving word to Rule Book:", error);
@@ -94,6 +96,7 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
         const words: SavedWord[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            // Ensure timestamp is a Date object. Firestore timestamps need to be converted.
             const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
             words.push({
                 id: doc.id,
@@ -101,13 +104,14 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
                 en_line: data.en_line,
                 ali_respell: data.ali_respell,
                 analysis: data.analysis || {}, // Ensure analysis object exists
+                audio_data_uri: data.audio_data_uri || null, // Handle audio data
                 timestamp: timestamp,
             });
         });
         return words;
     } catch (error) {
         console.error("Error fetching Rule Book words:", error);
-        return [];
+        return []; // Return empty array on failure
     }
 }
 
@@ -120,23 +124,33 @@ export async function deleteWordFromRuleBook(wordId: string): Promise<void> {
     }
 }
 
-export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial<AIAnalysis>): Promise<void> {
+export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial<AIAnalysis & { audio_data_uri?: string }>): Promise<void> {
     if (!wordId) throw new Error("Word ID is required.");
     try {
         const wordRef = doc(db, "rulebook", wordId);
         
-        // To safely update nested objects in Firestore, we use dot notation.
-        // We get the existing analysis object first to merge with the new one.
         const docSnap = await getDoc(wordRef);
         if (!docSnap.exists()) throw new Error("Word not found.");
         
-        const existingAnalysis = docSnap.data().analysis || {};
+        const existingData = docSnap.data();
+        const existingAnalysis = existingData.analysis || {};
 
-        const newAnalysisData = { ...existingAnalysis, ...analysisUpdate };
+        const { audio_data_uri, ...otherUpdates } = analysisUpdate;
+
+        const updatePayload: any = {};
         
-        await updateDoc(wordRef, {
-            analysis: newAnalysisData
-        });
+        if(Object.keys(otherUpdates).length > 0) {
+          const newAnalysisData = { ...existingAnalysis, ...otherUpdates };
+          updatePayload.analysis = newAnalysisData;
+        }
+
+        if (audio_data_uri !== undefined) {
+            updatePayload.audio_data_uri = audio_data_uri;
+        }
+        
+        if (Object.keys(updatePayload).length > 0) {
+            await updateDoc(wordRef, updatePayload);
+        }
 
     } catch (error) {
         console.error("Error updating word analysis:", error);

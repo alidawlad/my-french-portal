@@ -14,14 +14,14 @@ import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import type { AIAnalysis } from './rule-book';
+import type { AIAnalysis, SavedWord } from './rule-book';
 
 type InputSectionProps = {
   text: string;
   onTextChange: (value: string) => void;
   lines: { en: string; ar: string };
   showArabic: boolean;
-  onSaveWord: (wordData: { fr_line: string, en_line: string, ali_respell: string, analysis: AIAnalysis }) => void;
+  onSaveWord: (wordData: Omit<SavedWord, 'id' | 'timestamp'>) => void;
   isSaving: boolean;
   enLineTraceComponent: React.ReactNode;
 };
@@ -53,6 +53,7 @@ export function InputSection({
   const [userMeaning, setUserMeaning] = useState("");
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AIAnalysis>({});
+  const [audioData, setAudioData] = useState<string | null>(null);
   const { toast } = useToast();
   const gridCols = showArabic ? "grid-cols-3" : "grid-cols-2";
 
@@ -62,6 +63,7 @@ export function InputSection({
     try {
       const { audio: audioDataUri } = await getAudioForText(text);
       if (audioDataUri) {
+        setAudioData(audioDataUri); // Cache the audio data
         const audio = new Audio(audioDataUri);
         audio.play();
         audio.onended = () => setIsPlaying(false);
@@ -150,9 +152,11 @@ export function InputSection({
       en_line: userMeaning,
       ali_respell: lines.en,
       analysis,
+      audio_data_uri: audioData,
     });
     setUserMeaning("");
     setAnalysis({});
+    setAudioData(null);
   }
   
   const renderAiResponse = (response: any) => {
@@ -195,6 +199,7 @@ export function InputSection({
               onTextChange(e.target.value);
               setAnalysis({}); // Reset analysis on new text
               setUserMeaning("");
+              setAudioData(null); // Reset audio on new text
             }}
             rows={2}
             className="mt-1 resize-y bg-card text-lg"

@@ -102,7 +102,7 @@ export function AliRespeakerClient() {
     };
   }, [text]);
 
-  const handleSaveWord = async (wordData: { fr_line: string, en_line: string, ali_respell: string, analysis: AIAnalysis }) => {
+  const handleSaveWord = async (wordData: Omit<SavedWord, 'id' | 'timestamp'>) => {
     if (!wordData.fr_line.trim() || isSaving) return;
     setIsSaving(true);
     
@@ -111,7 +111,7 @@ export function AliRespeakerClient() {
       setSavedWords(prev => [newSavedWord, ...prev]);
       toast({
         title: "Saved!",
-        description: `"${wordData.fr_line}" has been added to your Saved Words.`,
+        description: `"${wordData.fr_line}" has been added to your Rule Book.`,
       });
       setText(""); // Clear input after saving
     } catch (error) {
