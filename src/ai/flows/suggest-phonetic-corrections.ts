@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const SuggestPhoneticCorrectionsInputSchema = z.object({
@@ -33,6 +34,7 @@ export async function suggestPhoneticCorrections(input: SuggestPhoneticCorrectio
 
 const suggestPhoneticCorrectionsPrompt = ai.definePrompt({
   name: 'suggestPhoneticCorrectionsPrompt',
+  model: googleAI.model('gemini-1.5-flash-latest'),
   input: {schema: SuggestPhoneticCorrectionsInputSchema},
   output: {schema: SuggestPhoneticCorrectionsOutputSchema},
   prompt: `You are a phonetic expert specializing in French pronunciation.

@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const RuleAssistantInputSchema = z.object({
@@ -33,6 +34,7 @@ export async function ruleAssistant(input: RuleAssistantInput): Promise<RuleAssi
 
 const explainGrammarPrompt = ai.definePrompt({
     name: 'explainGrammarPrompt',
+    model: googleAI.model('gemini-1.5-flash-latest'),
     input: {schema: RuleAssistantInputSchema},
     output: {schema: RuleAssistantOutputSchema},
     prompt: `You are a friendly and concise French grammar tutor. The user has a question about the grammar of a specific word or phrase.
@@ -53,6 +55,7 @@ const explainGrammarPrompt = ai.definePrompt({
 
 const explainPhoneticsPrompt = ai.definePrompt({
     name: 'explainPhoneticsPrompt',
+    model: googleAI.model('gemini-1.5-flash-latest'),
     input: {schema: RuleAssistantInputSchema},
     output: {schema: RuleAssistantOutputSchema},
     prompt: `You are a friendly and concise French phonetics tutor. The user has a question about the pronunciation of a specific word or phrase.
@@ -73,6 +76,7 @@ const explainPhoneticsPrompt = ai.definePrompt({
 
 const findSimilarPrompt = ai.definePrompt({
     name: 'findSimilarPrompt',
+    model: googleAI.model('gemini-1.5-flash-latest'),
     input: {schema: RuleAssistantInputSchema},
     output: {schema: RuleAssistantOutputSchema},
     prompt: `You are a helpful French vocabulary assistant. The user wants to see words that are phonetically or grammatically similar to a specific word or phrase.

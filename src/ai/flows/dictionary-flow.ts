@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'genkit';
 
 const DictionaryInputSchema = z.object({
@@ -28,6 +29,7 @@ export async function getDictionaryEntry(input: DictionaryInput): Promise<Dictio
 
 const dictionaryPrompt = ai.definePrompt({
   name: 'dictionaryPrompt',
+  model: googleAI.model('gemini-1.5-flash-latest'),
   input: {schema: DictionaryInputSchema},
   output: {schema: DictionaryOutputSchema},
   prompt: `You are a helpful bilingual dictionary.
