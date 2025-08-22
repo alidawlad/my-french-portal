@@ -147,7 +147,7 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
       toast({ variant: "destructive", title: "Audio Error", description: "An unexpected error occurred." });
       setIsPlaying(false);
     }
-  }
+  };
 
 
   const renderResponse = (response: AIResponse | undefined) => {
@@ -200,7 +200,7 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
-                        </Description>
+                        </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
