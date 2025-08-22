@@ -34,7 +34,7 @@ export async function suggestPhoneticCorrections(input: SuggestPhoneticCorrectio
 
 const suggestPhoneticCorrectionsPrompt = ai.definePrompt({
   name: 'suggestPhoneticCorrectionsPrompt',
-  model: googleAI.model('gemini-1.5-flash-latest'),
+  model: googleAI.model('gemini-2.5-flash-lite'),
   input: {schema: SuggestPhoneticCorrectionsInputSchema},
   output: {schema: SuggestPhoneticCorrectionsOutputSchema},
   prompt: `You are a phonetic expert specializing in French pronunciation.

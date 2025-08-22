@@ -29,7 +29,7 @@ export async function getDictionaryEntry(input: DictionaryInput): Promise<Dictio
 
 const dictionaryPrompt = ai.definePrompt({
   name: 'dictionaryPrompt',
-  model: googleAI.model('gemini-1.5-flash-latest'),
+  model: googleAI.model('gemini-2.5-flash-lite'),
   input: {schema: DictionaryInputSchema},
   output: {schema: DictionaryOutputSchema},
   prompt: `You are a helpful bilingual dictionary.
