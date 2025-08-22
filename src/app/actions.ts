@@ -24,7 +24,7 @@ export async function getPhoneticSuggestions(text: string): Promise<SuggestPhone
 
 export async function getRuleAssistantResponse(input: RuleAssistantInput): Promise<RuleAssistantOutput> {
   if (!input.text.trim() || !input.query.trim()) {
-    return { explanation: "Please provide text and a query." };
+    return { };
   }
   try {
     const result = await ruleAssistant(input);

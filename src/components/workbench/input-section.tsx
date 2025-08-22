@@ -34,7 +34,7 @@ const UnderlineColors: Record<RuleCategory, string> = {
     silent: "border-gray-500 border-dashed",
 };
 
-const actionChips: {label: string; type: keyof AIAnalysis; icon: React.ReactNode}[] = [
+const actionChips: {label: string; type: keyof Omit<AIAnalysis, 'definitions'>; icon: React.ReactNode}[] = [
     { label: "Explain Phonetics", type: "explain_phonetics", icon: <MessageSquareQuote className="w-4 h-4" /> },
     { label: "Explain Grammar", type: "explain_grammar", icon: <BrainCircuit className="w-4 h-4" /> },
     { label: "Find Similar Words", type: "find_similar", icon: <ListFilter className="w-4 h-4" /> },
@@ -118,7 +118,7 @@ export function InputSection({
 
     try {
       const result = await getRuleAssistantResponse({ text, query: text.trim(), type });
-      setAnalysis(prev => ({...prev, [type]: JSON.parse(result.explanation)}));
+      setAnalysis(prev => ({...prev, [type]: result}));
     } catch (error) {
       toast({ variant: "destructive", title: "AI Error", description: "Could not get a response from the AI." });
       console.error(error);
@@ -159,8 +159,8 @@ export function InputSection({
     setAudioData(null);
   }
   
-  const renderAiResponse = (response: any) => {
-    if (!response) return null;
+  const renderAiResponse = (response: RuleAssistantOutput | undefined) => {
+    if (!response || Object.keys(response).length === 0) return null;
     return (
         <div className="space-y-2 mt-2 p-3 bg-background/50 rounded-lg border">
            <div className="flex items-start gap-3">

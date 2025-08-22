@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis, getAudioForText } from "@/app/actions";
-import type { RuleAssistantInput } from "@/ai/flows/rule-assistant-flow";
+import type { RuleAssistantInput, RuleAssistantOutput } from "@/ai/flows/rule-assistant-flow";
 import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from "@/hooks/use-toast";
 import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, BookOpen, Volume2 } from "lucide-react";
@@ -13,18 +13,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
 
-export type AIResponse = {
-  summary?: string;
-  details?: string;
-  pattern?: string;
-  words?: string[];
-}
-
 export type AIAnalysis = {
     definitions?: DictionaryOutput;
-    explain_phonetics?: AIResponse;
-    explain_grammar?: AIResponse;
-    find_similar?: AIResponse;
+    explain_phonetics?: RuleAssistantOutput;
+    explain_grammar?: RuleAssistantOutput;
+    find_similar?: RuleAssistantOutput;
 };
 
 export type SavedWord = {
@@ -83,10 +76,9 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
         query: word.fr_line,
         type,
       });
-      const parsedExplanation = JSON.parse(result.explanation);
-      const newAnalysis = { ...analysis, [type]: parsedExplanation };
+      const newAnalysis = { ...analysis, [type]: result };
 
-      await updateWordAnalysis(word.id, { [type]: parsedExplanation });
+      await updateWordAnalysis(word.id, { [type]: result });
       onUpdateWord({ ...word, analysis: newAnalysis });
       
     } catch (error) {
@@ -149,9 +141,13 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
     }
   };
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await onDeleteWord(word.id);
+  };
 
-  const renderResponse = (response: AIResponse | undefined) => {
-    if (!response) return null;
+  const renderResponse = (response: RuleAssistantOutput | undefined) => {
+    if (!response || Object.keys(response).length === 0) return null;
     return (
       <div className="p-3 bg-background/50 rounded-lg border mt-2">
         <div className="flex items-start gap-3">
@@ -171,11 +167,6 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
     );
   };
   
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    await onDeleteWord(word.id);
-  };
-
   return (
     <Card className="flex flex-col">
       <CardHeader>
