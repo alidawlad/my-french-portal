@@ -251,7 +251,7 @@ export function AliRespeakerClient() {
           enLineTraceComponent={renderEnLineWithTrace(enTrace)}
         />
         
-        <Card className="bg-background/50">
+        <Card>
           <CardHeader>
             <CardTitle className="font-headline text-lg flex items-center gap-2">
               <BookMarked className="w-5 h-5 text-primary" />
