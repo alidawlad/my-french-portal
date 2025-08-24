@@ -1,7 +1,7 @@
 // src/components/workbench/rule-book.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis, getAudioForText } from "@/app/actions";
@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from '../ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Checkbox } from '../ui/checkbox';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { TokenTrace, toEN } from '@/lib/phonetics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
@@ -230,6 +230,17 @@ export function RuleBook({ savedWords, onDeleteWord, onUpdateWord }: RuleBookPro
   );
 }
 
+const ClientRelativeTime = ({ date }: { date: Date }) => {
+    const [relativeTime, setRelativeTime] = useState(() => format(date, 'PPpp')); // Default static format
+
+    useEffect(() => {
+        // This effect runs only on the client, after hydration
+        setRelativeTime(formatDistanceToNow(date, { addSuffix: true }));
+    }, [date]);
+
+    return <>{relativeTime}</>;
+};
+
 
 function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -338,6 +349,8 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
       </div>
     );
   };
+  
+  const wordTimestamp = new Date(word.timestamp);
 
   return (
     <>
@@ -367,7 +380,7 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
                 </div>
             </TableCell>
              <TableCell className="hidden lg:table-cell text-right text-muted-foreground text-sm">
-                {formatDistanceToNow(new Date(word.timestamp), { addSuffix: true })}
+                 <ClientRelativeTime date={wordTimestamp} />
             </TableCell>
             <TableCell className="text-right">
                 <AlertDialog>
