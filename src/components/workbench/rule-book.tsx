@@ -4,11 +4,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis, getAudioForText } from "@/app/actions";
+import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis, getAudioForText, refreshWordPhonetics } from "@/app/actions";
 import type { RuleAssistantOutput } from "@/ai/flows/rule-assistant-flow";
 import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from "@/hooks/use-toast";
-import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, BookOpen, Volume2, Tag, Search } from "lucide-react";
+import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, BookOpen, Volume2, Tag, Search, RefreshCw } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
@@ -68,7 +68,7 @@ const RenderTraceWithTooltips = ({ trace }: { trace: TokenTrace[] }) => {
     <>
       {trace.map((item, i) => {
         const isSilent = item.out.startsWith('(') && item.out.endsWith(')');
-        const enToken = isSilent ? toEN(item.out.slice(1, -1)) : toEN(item.out);
+        const enToken = isSilent ? item.src : toEN(item.out);
 
         return (
           <TooltipProvider key={`trace-${i}`}>
@@ -291,6 +291,20 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
         setLoading(null);
     }
   };
+  
+   const handleRefreshPhonetics = async () => {
+    setLoading('phonetics');
+    try {
+      const updatedPhonetics = await refreshWordPhonetics(word.id, word.fr_line);
+      onUpdateWord(word.id, { ...word, ...updatedPhonetics });
+      toast({ title: "Phonetics Refreshed", description: `"${word.fr_line}" has been updated with the latest rules.` });
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Refresh Failed", description: "Could not refresh phonetics." });
+    } finally {
+      setLoading(null);
+    }
+  };
 
   const handlePlayAudio = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent row from toggling
@@ -430,6 +444,10 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
                            <Button size="sm" variant="outline" onClick={handleFetchDefinitions} disabled={!!loading || !!analysis.definitions}>
                                 {loading === 'definitions' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BookOpen className="mr-2 h-4 w-4" />}
                                 Get Definitions
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={handleRefreshPhonetics} disabled={!!loading}>
+                                {loading === 'phonetics' ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                Refresh Phonetics
                             </Button>
                             {(['explain_phonetics', 'explain_grammar', 'find_similar'] as const).map(type => {
                               const isLoading = loading === type;

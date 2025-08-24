@@ -8,6 +8,7 @@ import { getDictionaryEntry, type DictionaryInput, type DictionaryOutput } from 
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import type { SavedWord, AIAnalysis } from '@/components/workbench/rule-book';
+import { transformWordWithTrace, toEN, type TokenTrace } from '@/lib/phonetics';
 
 export async function getPhoneticSuggestions(text: string): Promise<SuggestPhoneticCorrectionsOutput> {
   if (!text.trim()) {
@@ -197,5 +198,31 @@ export async function updateWordAnalysis(wordId: string, updates: Partial<AIAnal
     } catch (error) {
         console.error("Error updating word analysis:", error);
         throw new Error("Failed to update word analysis in the database.");
+    }
+}
+
+
+export async function refreshWordPhonetics(wordId: string, fr_line: string): Promise<{ ali_respell: string; ali_respell_trace: TokenTrace[] }> {
+    if (!wordId || !fr_line) {
+        throw new Error("Word ID and French text are required for refreshing phonetics.");
+    }
+
+    try {
+        const newTrace = transformWordWithTrace(fr_line);
+        const newRespell = newTrace.map(t => typeof t === 'string' ? t : toEN(t.out)).join('');
+
+        const updatePayload = {
+            ali_respell: newRespell,
+            ali_respell_trace: newTrace,
+        };
+
+        const wordRef = doc(db, "rulebook", wordId);
+        await updateDoc(wordRef, updatePayload);
+        
+        return updatePayload;
+
+    } catch (error) {
+        console.error("Error refreshing word phonetics:", error);
+        throw new Error("Failed to refresh word phonetics in the database.");
     }
 }
