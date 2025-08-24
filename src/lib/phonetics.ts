@@ -84,7 +84,7 @@ export const getRuleForWord = (word: string): Rule | undefined => {
     return sortedRules.find(r => r.re.test(lw));
 }
 
-export const SEP_MAP: Record<SepKind, string> = { hyphen: "\u2011", middot: "·", space: " ", none: "" };
+export const SEP_MAP: Record<SepKind, string> = { hyphen: "‑", middot: "·", space: " ", none: "" };
 
 const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l'];
 const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'anaïs', 'reims', 'six', 'dix', 'cinq']);
@@ -92,11 +92,11 @@ const NUMBER_EXCEPTIONS: Record<string, TokenTrace[]> = {
     'un':     [{ src: 'un', out: 'UH~', changed: true, ruleKey: 'nasUN', note: 'un → nasal /œ̃/'}],
     'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö' }, {src: 'x', out: '(X)', changed: true, ruleKey: 'finalDrop', note: 'Silent final consonant'}],
     'trois':  [{ src: 't', out: 'T'}, { src: 'r', out: 'R'}, { src: 'oi', out: 'WA', changed: true, ruleKey: 'oi', note: 'oi → wa'}, {src: 's', out: '(S)', changed: true, ruleKey: 'finalDrop', note: 'Silent final consonant'}],
-    'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalDrop', note: 'Silent final e'}],
+    'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalDrop', note: 'Silent final e (schwa)'}],
     'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'softC', note: 'c before i → s'}, { src: 'in', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'q', out: 'K'}],
     'six':    [{ src: 's', out: 'S'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
-    'sept':   [{ src: 's', out: 'S'}, { src: 'e', out: 'EH'}, { src: 'p', out: '(P)', changed: true, ruleKey: 'septPdrop', note: 'The p in "sept" is silent'}, { src: 't', out: 'T'}],
-    'huit':   [{ src: 'h', out: '(H)', changed: true, ruleKey: 'hSilent', note: 'The "h" is silent in French'}, { src: 'ui', out: 'ÜEE', changed: true, ruleKey: 'uiGlide', note: 'ui → ü+ee'}, {src: 't', out: 'T'}],
+    'sept':   [{ src: 's', out: 'S'}, { src: 'e', out: 'EH'}, { src: 'p', out: '(P)', changed: true, ruleKey: 'septPdrop', note: 'The \'p\' in "sept" is a historical spelling and is silent.'}, { src: 't', out: 'T'}],
+    'huit':   [{ src: 'h', out: '(H)', changed: true, ruleKey: 'hSilent', note: 'H is always silent in French words, though it can block liaisons.'}, { src: 'ui', out: 'ÜEE', changed: true, ruleKey: 'uiGlide', note: 'ui → ü+ee'}, {src: 't', out: 'T'}],
     'neuf':   [{ src: 'n', out: 'N'}, { src: 'eu', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö'}, { src: 'f', out: 'F'}],
     'dix':    [{ src: 'd', out: 'D'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
 };
@@ -238,8 +238,8 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
         i+=3; continue;
     }
     if (twoChars === 'au') {
-        traces.push({src: 'au', out: 'OH', ruleKey: 'auOH', changed: true, note: 'au → oh'});
-        i+=2; continue;
+      traces.push({src: 'au', out: 'OH', ruleKey: 'auOH', changed: true, note: 'au → oh'});
+      i+=2; continue;
     }
     if (twoChars === 'oi') {
       traces.push({src: 'oi', out: 'WA', ruleKey: 'oi', changed: true, note: 'oi → wa'});
@@ -286,7 +286,7 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
             if (nextIsSoft) { changed=true; ruleKey='softG'; note='g before e/i/y → zh'; }
             break;
         }
-        case 'h': outToken = '(H)'; changed=true; ruleKey='hSilent'; note='The "h" is silent in French'; break;
+        case 'h': outToken = '(H)'; changed=true; ruleKey='hSilent'; note='The letter H is always silent in French.'; break;
         case 'i': case 'î': case 'ï': outToken = 'EE'; break;
         case 'j': outToken = 'ZH'; changed=true; ruleKey='jZH'; note='j → zh'; break;
         case 'k': outToken = 'K'; break;
@@ -343,18 +343,18 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
       lastTrace.out = `(${lastTrace.src.toUpperCase()})`;
       lastTrace.ruleKey = 'finalDrop';
       lastTrace.changed = true;
-      lastTrace.note = `Silent final consonant`;
+      lastTrace.note = `Rule: Final consonants are usually silent (except for C, R, F, L - think 'CaReFuL').`;
     }
   }
   
   // Final 'e' silent
-  if (traces.length > 0 && traces[traces.length - 1].src === 'e') {
+  if (traces.length > 1 && traces[traces.length - 1].src === 'e') {
       const lastTrace = traces[traces.length - 1];
       if (lastTrace.ruleKey !== 'finalDrop') { // Avoid double marking
         lastTrace.out = '(E)';
         lastTrace.ruleKey = 'finalDrop';
         lastTrace.changed = true;
-        lastTrace.note = 'Silent final e';
+        lastTrace.note = 'Rule: A final \'e\' (schwa) is typically silent unless the word is only one syllable.';
       }
   }
 
@@ -365,3 +365,4 @@ export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
 
     
+
