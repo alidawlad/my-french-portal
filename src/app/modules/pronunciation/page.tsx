@@ -1,9 +1,9 @@
 
 import { AliRespeakerClient } from "@/components/ali-respeaker-client";
 import { RuleBook } from '@/components/workbench/rule-book';
-import { getRuleBookWords, deleteWordFromRuleBook, updateWordAnalysis, saveWordToRuleBook } from '@/app/actions';
+import { getRuleBookWords, deleteWordFromRuleBook, updateWordAnalysis } from '@/app/actions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookMarked, FlaskConical, Loader2 } from 'lucide-react';
+import { BookMarked, FlaskConical } from 'lucide-react';
 
 
 // This is a server component to fetch initial data

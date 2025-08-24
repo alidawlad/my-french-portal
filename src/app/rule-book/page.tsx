@@ -1,8 +1,6 @@
 
 import { RuleBook } from '@/components/workbench/rule-book';
 import { getRuleBookWords, deleteWordFromRuleBook, updateWordAnalysis } from '@/app/actions';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookMarked } from 'lucide-react';
 
 export default async function RuleBookPage() {
   const words = await getRuleBookWords();

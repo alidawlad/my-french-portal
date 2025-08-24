@@ -43,7 +43,6 @@ export function AliRespeakerClient() {
   const [text, setText] = useState("un deux trois quatre cinq six sept huit neuf dix");
   const [showArabic, setShowArabic] = useState(false);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
-  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
  const { enTrace, arLine } = useMemo(() => {
@@ -161,7 +160,7 @@ export function AliRespeakerClient() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-body">
+    <>
       <WorkbenchHeader
         showArabic={showArabic}
         onShowArabicChange={setShowArabic}
@@ -169,17 +168,15 @@ export function AliRespeakerClient() {
         onSeparatorChange={setSeparator}
       />
       
-      <main className="container mx-auto p-4 space-y-8">
+      <main className="space-y-8">
         <InputSection
           text={text}
           onTextChange={setText}
           lines={{ en: enTrace.map(t => typeof t === 'string' ? t : toEN(t.out)).join(''), ar: arLine }}
           showArabic={showArabic}
-          onSaveWord={() => {}}
-          isSaving={isSaving}
           enLineTraceComponent={renderEnLineWithTrace(enTrace)}
         />
       </main>
-    </div>
+    </>
   );
 }

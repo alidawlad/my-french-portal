@@ -24,8 +24,6 @@ type InputSectionProps = {
   onTextChange: (value: string) => void;
   lines: { en: string; ar: string };
   showArabic: boolean;
-  onSaveWord: (wordData: Omit<SavedWord, 'id' | 'timestamp'>) => void;
-  isSaving: boolean;
   enLineTraceComponent: React.ReactNode;
 };
 
@@ -48,10 +46,10 @@ export function InputSection({
   onTextChange,
   lines,
   showArabic,
-  isSaving,
   enLineTraceComponent,
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [userMeaning, setUserMeaning] = useState("");
   const [tags, setTags] = useState("");
   const [isLoading, setIsLoading] = useState<string | null>(null);
@@ -151,7 +149,9 @@ export function InputSection({
   }
 
   const handleSave = async () => {
+    setIsSaving(true);
     const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
+    tagArray.push('pronunciation'); // Auto-tag with the module name
     
     try {
         await saveWordToRuleBook({
@@ -183,6 +183,8 @@ export function InputSection({
             title: "Save Failed",
             description: "Could not save the word. Please check the console for details.",
         });
+    } finally {
+      setIsSaving(false);
     }
   }
   
