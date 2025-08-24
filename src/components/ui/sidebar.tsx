@@ -747,7 +747,7 @@ export {
   SidebarHeader,
   SidebarInput,
   SidebarInset,
-  SidebarItem as SidebarMenuItem,
+  SidebarItem,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuBadge,
