@@ -1,8 +1,8 @@
 
 import type {Metadata} from 'next';
 import { Toaster } from "@/components/ui/toaster";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarItem, SidebarMenu, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import Link from 'next/link';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarItem, SidebarProvider } from '@/components/ui/sidebar';
+import { NavLink } from '@/components/nav-link';
 import { Home, NotebookText, BarChart, Layers } from 'lucide-react';
 import './globals.css';
 
@@ -37,28 +37,28 @@ export default function RootLayout({
             <SidebarContent>
               <SidebarMenu>
                 <SidebarItem>
-                   <Link href="/today" className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50">
+                   <NavLink href="/today">
                     <Home />
                     <span className="group-data-[collapsible=icon]:hidden">Today</span>
-                   </Link>
+                   </NavLink>
                 </SidebarItem>
                  <SidebarItem>
-                   <Link href="/modules" className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50">
+                   <NavLink href="/modules">
                     <Layers />
                     <span className="group-data-[collapsible=icon]:hidden">Modules</span>
-                   </Link>
+                   </NavLink>
                 </SidebarItem>
                  <SidebarItem>
-                   <Link href="/rule-book" className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50">
+                   <NavLink href="/rule-book">
                     <NotebookText />
                     <span className="group-data-[collapsible=icon]:hidden">Rule Book</span>
-                   </Link>
+                   </NavLink>
                 </SidebarItem>
                  <SidebarItem>
-                   <Link href="/reports" className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50">
+                   <NavLink href="/reports">
                     <BarChart />
                     <span className="group-data-[collapsible=icon]:hidden">Reports</span>
-                   </Link>
+                   </NavLink>
                 </SidebarItem>
               </SidebarMenu>
             </SidebarContent>
