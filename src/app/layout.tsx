@@ -3,7 +3,7 @@ import type {Metadata} from 'next';
 import { Toaster } from "@/components/ui/toaster";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarItem, SidebarMenu, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Home, NotebookText, BarChart, FlaskConical } from 'lucide-react';
+import { Home, NotebookText, BarChart, Layers } from 'lucide-react';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -44,7 +44,7 @@ export default function RootLayout({
                 </SidebarItem>
                  <SidebarItem>
                    <Link href="/modules/pronunciation" className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50">
-                    <FlaskConical />
+                    <Layers />
                     <span className="group-data-[collapsible=icon]:hidden">Pronunciation</span>
                    </Link>
                 </SidebarItem>
