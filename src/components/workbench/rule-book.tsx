@@ -224,13 +224,16 @@ const ClientRelativeTime = ({ date }: { date: Date }) => {
     const [relativeTime, setRelativeTime] = useState('');
 
     useEffect(() => {
+        // This effect runs only on the client, after hydration
         setRelativeTime(formatDistanceToNow(date, { addSuffix: true }));
     }, [date]);
 
     if (!relativeTime) {
-        return null; // Avoid hydration mismatch
+        // Render the full date on the server and during initial client render
+        return <span title={format(date, 'PPP p')}>{format(date, 'PP')}</span>;
     }
 
+    // Render the relative time only on the client after the effect has run
     return (
         <TooltipProvider>
             <Tooltip delayDuration={100}>
@@ -392,9 +395,9 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
              <CardContent className="space-y-3 pb-4">
                 <div>
                      <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">Ali Respell</div>
-                     <p className="font-mono text-sm tracking-wide text-muted-foreground">
+                     <div className="font-mono text-sm tracking-wide text-muted-foreground">
                         {word.ali_respell_trace ? <RenderTraceWithTooltips trace={word.ali_respell_trace} /> : word.ali_respell}
-                    </p>
+                    </div>
                 </div>
                 {word.tags.length > 0 && (
                     <div>
