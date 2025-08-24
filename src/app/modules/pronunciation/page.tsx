@@ -31,7 +31,7 @@ export default async function PronunciationModulePage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <RuleBook savedWords={savedWords} onDeleteWord={deleteWordFromRuleBook} onUpdateWord={onUpdateWord} />
+                    <RuleBook savedWords={savedWords} onDeleteWord={deleteWordFromRuleBook} onUpdateWord={updateWordAnalysis} />
                 </CardContent>
             </Card>
         </div>
