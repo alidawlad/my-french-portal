@@ -96,16 +96,15 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
         const words: SavedWord[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            // Ensure timestamp is a Date object. Firestore timestamps need to be converted.
-            const timestamp = data.timestamp ? data.timestamp.toDate() : new Date();
+            const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
             words.push({
                 id: doc.id,
                 fr_line: data.fr_line,
                 en_line: data.en_line,
                 ali_respell: data.ali_respell,
                 ali_respell_trace: data.ali_respell_trace || [],
-                analysis: data.analysis || {}, // Ensure analysis object exists
-                audio_data_uri: data.audio_data_uri || null, // Handle audio data
+                analysis: data.analysis || {},
+                audio_data_uri: data.audio_data_uri || null,
                 tags: data.tags || [],
                 timestamp: timestamp,
             });
@@ -126,7 +125,7 @@ export async function deleteWordFromRuleBook(wordId: string): Promise<void> {
     }
 }
 
-export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial<AIAnalysis & { audio_data_uri?: string; tags?: string[] }>): Promise<void> {
+export async function updateWordAnalysis(wordId: string, updates: Partial<AIAnalysis & { audio_data_uri?: string; tags?: string[]; analysis?: AIAnalysis }>): Promise<void> {
     if (!wordId) throw new Error("Word ID is required.");
     try {
         const wordRef = doc(db, "rulebook", wordId);
@@ -137,12 +136,12 @@ export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial
         const existingData = docSnap.data();
         const existingAnalysis = existingData.analysis || {};
 
-        const { audio_data_uri, tags, ...otherUpdates } = analysisUpdate;
+        const { audio_data_uri, tags, analysis, ...otherUpdates } = updates;
 
         const updatePayload: any = {};
         
-        if(Object.keys(otherUpdates).length > 0) {
-          const newAnalysisData = { ...existingAnalysis, ...otherUpdates };
+        const newAnalysisData = { ...existingAnalysis, ...otherUpdates, ...(analysis || {}) };
+        if(Object.keys(newAnalysisData).length > 0) {
           updatePayload.analysis = newAnalysisData;
         }
 
