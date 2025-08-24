@@ -68,15 +68,15 @@ export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'times
         throw new Error("Cannot save an empty word.");
     }
     try {
-        const newWord = {
+        const newWordForDb = {
             ...wordData,
-            timestamp: serverTimestamp(),
+            timestamp: serverTimestamp(), // Use server timestamp for DB
         };
 
-        const docRef = await addDoc(collection(db, "rulebook"), newWord);
+        const docRef = await addDoc(collection(db, "rulebook"), newWordForDb);
         
-        // The timestamp from serverTimestamp is resolved on the server, 
-        // so we return a client-side Date object for immediate UI updates.
+        // Return a fully serializable object to the client for optimistic UI updates.
+        // Use a client-side Date object, as the server one is not available yet.
         return {
             id: docRef.id,
             ...wordData,
@@ -98,11 +98,12 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
             const data = doc.data();
             // This is the critical fix: converting Firestore Timestamp to a serializable JS Date object.
             const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
+            
             words.push({
                 id: doc.id,
-                fr_line: data.fr_line,
-                en_line: data.en_line,
-                ali_respell: data.ali_respell,
+                fr_line: data.fr_line || '',
+                en_line: data.en_line || '',
+                ali_respell: data.ali_respell || '',
                 ali_respell_trace: data.ali_respell_trace || [],
                 analysis: data.analysis || {},
                 audio_data_uri: data.audio_data_uri || null,
@@ -126,7 +127,7 @@ export async function deleteWordFromRuleBook(wordId: string): Promise<void> {
     }
 }
 
-export async function updateWordAnalysis(wordId: string, updates: Partial<AIAnalysis & { audio_data_uri?: string; tags?: string[]; analysis?: AIAnalysis }>): Promise<void> {
+export async function updateWordAnalysis(wordId: string, updates: Partial<AIAnalysis & { audio_data_uri?: string; tags?: string[]; }>): Promise<void> {
     if (!wordId) throw new Error("Word ID is required.");
     try {
         const wordRef = doc(db, "rulebook", wordId);
@@ -137,15 +138,16 @@ export async function updateWordAnalysis(wordId: string, updates: Partial<AIAnal
         const existingData = docSnap.data();
         const existingAnalysis = existingData.analysis || {};
 
-        const { audio_data_uri, tags, analysis, ...otherUpdates } = updates;
+        const { audio_data_uri, tags, ...analysisUpdates } = updates;
 
         const updatePayload: any = {};
         
-        const newAnalysisData = { ...existingAnalysis, ...otherUpdates, ...(analysis || {}) };
+        // This logic ensures we're properly nesting the analysis data under the 'analysis' key.
+        const newAnalysisData = { ...existingAnalysis, ...analysisUpdates };
         if(Object.keys(newAnalysisData).length > 0) {
           updatePayload.analysis = newAnalysisData;
         }
-
+        
         if (audio_data_uri !== undefined) {
             updatePayload.audio_data_uri = audio_data_uri;
         }

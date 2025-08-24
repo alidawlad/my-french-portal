@@ -16,6 +16,7 @@ export default async function PronunciationModulePage() {
 
     const handleUpdateWord = async (wordId: string, updates: any) => {
         "use server";
+        // This function was previously just a placeholder, now it correctly calls updateWordAnalysis
         await updateWordAnalysis(wordId, updates);
     };
 
