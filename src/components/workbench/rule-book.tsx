@@ -8,7 +8,7 @@ import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis,
 import type { RuleAssistantInput, RuleAssistantOutput } from "@/ai/flows/rule-assistant-flow";
 import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from "@/hooks/use-toast";
-import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, BookOpen, Volume2 } from "lucide-react";
+import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, BookOpen, Volume2, Tag } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
@@ -27,6 +27,7 @@ export type SavedWord = {
   ali_respell: string; // Generated respelling
   analysis: AIAnalysis;
   audio_data_uri: string | null; // Base64 encoded audio data
+  tags: string[];
   timestamp: Date;
 };
 
@@ -215,6 +216,14 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
                     {analysis.definitions.englishDefinition && <p><strong className="font-medium text-foreground/90">EN:</strong> {analysis.definitions.englishDefinition}</p>}
                     {analysis.definitions.frenchDefinition && <p><strong className="font-medium text-foreground/90">FR:</strong> {analysis.definitions.frenchDefinition}</p>}
                 </div>
+            </div>
+          )}
+          {word.tags && word.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                {word.tags.map(tag => (
+                    <Badge key={tag} variant="outline" className="font-normal">{tag}</Badge>
+                ))}
             </div>
           )}
       </CardContent>

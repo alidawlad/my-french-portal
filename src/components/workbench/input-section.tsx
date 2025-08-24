@@ -51,6 +51,7 @@ export function InputSection({
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [userMeaning, setUserMeaning] = useState("");
+  const [tags, setTags] = useState("");
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AIAnalysis>({});
   const [audioData, setAudioData] = useState<string | null>(null);
@@ -147,16 +148,19 @@ export function InputSection({
   }
 
   const handleSave = () => {
+    const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
     onSaveWord({
       fr_line: text,
       en_line: userMeaning,
       ali_respell: lines.en,
       analysis,
       audio_data_uri: audioData,
+      tags: tagArray,
     });
     setUserMeaning("");
     setAnalysis({});
     setAudioData(null);
+    setTags("");
   }
   
   const renderAiResponse = (response: RuleAssistantOutput | undefined) => {
@@ -200,25 +204,37 @@ export function InputSection({
               setAnalysis({}); // Reset analysis on new text
               setUserMeaning("");
               setAudioData(null); // Reset audio on new text
+              setTags("");
             }}
             rows={2}
             className="mt-1 resize-y bg-card text-lg"
             placeholder="Type or paste French text here..."
           />
         </div>
-        <div className="space-y-2">
-            <Label htmlFor="user-meaning">Your English meaning (optional)</Label>
-            <div className="flex items-center gap-2">
+        <div className="grid md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="user-meaning">Your English meaning (optional)</Label>
+                <div className="flex items-center gap-2">
+                    <Input
+                        id="user-meaning"
+                        value={userMeaning}
+                        onChange={(e) => setUserMeaning(e.target.value)}
+                        placeholder="e.g., 'Hello, how are you?'"
+                    />
+                    <Button variant="outline" size="icon" onClick={handleSuggestMeaning} disabled={!text.trim() || !!isLoading}>
+                        {isLoading === 'definitions' ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4" />}
+                        <span className="sr-only">Suggest meaning & definition</span>
+                    </Button>
+                </div>
+            </div>
+             <div>
+                <Label htmlFor="tags">Tags (comma-separated)</Label>
                 <Input
-                    id="user-meaning"
-                    value={userMeaning}
-                    onChange={(e) => setUserMeaning(e.target.value)}
-                    placeholder="e.g., 'Hello, how are you?'"
+                    id="tags"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    placeholder="e.g., verb, numbers, greeting"
                 />
-                <Button variant="outline" size="icon" onClick={handleSuggestMeaning} disabled={!text.trim() || !!isLoading}>
-                    {isLoading === 'definitions' ? <Loader2 className="h-4 w-4 animate-spin"/> : <Wand2 className="h-4 w-4" />}
-                    <span className="sr-only">Suggest meaning & definition</span>
-                </Button>
             </div>
         </div>
         <Button onClick={handleSave} disabled={!text.trim() || isSaving}>

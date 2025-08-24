@@ -105,6 +105,7 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
                 ali_respell: data.ali_respell,
                 analysis: data.analysis || {}, // Ensure analysis object exists
                 audio_data_uri: data.audio_data_uri || null, // Handle audio data
+                tags: data.tags || [],
                 timestamp: timestamp,
             });
         });
@@ -124,7 +125,7 @@ export async function deleteWordFromRuleBook(wordId: string): Promise<void> {
     }
 }
 
-export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial<AIAnalysis & { audio_data_uri?: string }>): Promise<void> {
+export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial<AIAnalysis & { audio_data_uri?: string; tags?: string[] }>): Promise<void> {
     if (!wordId) throw new Error("Word ID is required.");
     try {
         const wordRef = doc(db, "rulebook", wordId);
@@ -135,7 +136,7 @@ export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial
         const existingData = docSnap.data();
         const existingAnalysis = existingData.analysis || {};
 
-        const { audio_data_uri, ...otherUpdates } = analysisUpdate;
+        const { audio_data_uri, tags, ...otherUpdates } = analysisUpdate;
 
         const updatePayload: any = {};
         
@@ -146,6 +147,10 @@ export async function updateWordAnalysis(wordId: string, analysisUpdate: Partial
 
         if (audio_data_uri !== undefined) {
             updatePayload.audio_data_uri = audio_data_uri;
+        }
+
+        if (tags !== undefined) {
+            updatePayload.tags = tags;
         }
         
         if (Object.keys(updatePayload).length > 0) {
