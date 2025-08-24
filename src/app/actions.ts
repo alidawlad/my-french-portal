@@ -96,6 +96,7 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
         const words: SavedWord[] = [];
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            // This is the critical fix: converting Firestore Timestamp to a serializable JS Date object.
             const timestamp = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
             words.push({
                 id: doc.id,
@@ -106,7 +107,7 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
                 analysis: data.analysis || {},
                 audio_data_uri: data.audio_data_uri || null,
                 tags: data.tags || [],
-                timestamp: timestamp,
+                timestamp: timestamp, // Use the converted, serializable date.
             });
         });
         return words;
