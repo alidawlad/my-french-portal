@@ -181,7 +181,7 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(isDeleting);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const analysis = word.analysis || {};
 
