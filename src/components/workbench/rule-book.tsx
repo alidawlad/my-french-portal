@@ -17,6 +17,8 @@ import { Input } from '../ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Checkbox } from '../ui/checkbox';
 import { formatDistanceToNow } from 'date-fns';
+import { TokenTrace, toEN } from '@/lib/phonetics';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 export type AIAnalysis = {
     definitions?: DictionaryOutput;
@@ -30,6 +32,7 @@ export type SavedWord = {
   fr_line: string;
   en_line: string; // User-provided meaning
   ali_respell: string; // Generated respelling
+  ali_respell_trace: TokenTrace[]; // Rich trace data
   analysis: AIAnalysis;
   audio_data_uri: string | null; // Base64 encoded audio data
   tags: string[];
@@ -38,9 +41,60 @@ export type SavedWord = {
 
 type RuleBookProps = {
   savedWords: SavedWord[];
-  onDeleteWord: (id: string) => void;
-  onUpdateWord: (word: SavedWord) => void;
+  onDeleteWord: (id: string) => Promise<void>;
+  onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void;
 };
+
+const TraceColors: Record<string, string> = {
+    vowel: "bg-blue-100 dark:bg-blue-900/50",
+    nasal: "bg-amber-100 dark:bg-amber-900/50",
+    special: "bg-purple-100 dark:bg-purple-900/50",
+    liaison: "bg-green-100 dark:bg-green-900/50",
+    silent: "bg-gray-200 dark:bg-gray-700/50",
+    charMap: "bg-transparent",
+    default: "bg-pink-100 dark:bg-pink-900/50"
+};
+
+const getTraceColor = (trace: TokenTrace) => {
+    if (!trace.changed) return TraceColors.charMap;
+    if (trace.ruleKey?.includes('nas')) return TraceColors.nasal;
+    if (trace.ruleKey?.includes('Glide') || trace.ruleKey?.includes('Est') || trace.ruleKey?.includes('Il') || trace.ruleKey?.includes('quK')) return TraceColors.special;
+    if (trace.ruleKey === 'finalDrop' || trace.ruleKey === 'septPdrop' || trace.ruleKey === 'hSilent') return TraceColors.silent;
+    if (trace.ruleKey?.includes('eu') || trace.ruleKey?.includes('oi') || trace.ruleKey?.includes('eau')) return TraceColors.vowel;
+    return TraceColors.default;
+}
+
+const RenderTraceWithTooltips = ({ trace }: { trace: TokenTrace[] }) => {
+  return (
+    <>
+      {trace.map((item, i) => {
+        const isSilent = item.out.startsWith('(') && item.out.endsWith(')');
+        const enToken = isSilent ? item.out.slice(1, -1) : item.out;
+
+        return (
+          <TooltipProvider key={`trace-${i}`}>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <span className={`px-0.5 rounded-sm ${isSilent ? 'line-through text-muted-foreground/80' : getTraceColor(item)}`}>
+                  {enToken}
+                </span>
+              </TooltipTrigger>
+              {item.changed && 
+                <TooltipContent>
+                  <p className="font-mono text-sm">
+                    <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{item.out}</span>
+                  </p>
+                  {item.note && <p className="text-sm text-muted-foreground">{item.note}</p>}
+                </TooltipContent>
+              }
+            </Tooltip>
+          </TooltipProvider>
+        );
+      })}
+    </>
+  );
+};
+
 
 function RuleBookToolbar({ onFilterChange, allTags }: { onFilterChange: (filters: { searchTerm: string, selectedTags: string[] }) => void, allTags: string[] }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -177,7 +231,7 @@ export function RuleBook({ savedWords, onDeleteWord, onUpdateWord }: RuleBookPro
 }
 
 
-function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (word: SavedWord) => void }) {
+function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -195,8 +249,8 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
       });
       const newAnalysis = { ...analysis, [type]: result };
 
-      await updateWordAnalysis(word.id, { [type]: result });
-      onUpdateWord({ ...word, analysis: newAnalysis });
+      await updateWordAnalysis(word.id, { analysis: newAnalysis });
+      onUpdateWord(word.id, { ...word, analysis: newAnalysis });
       
     } catch (error) {
       console.error(error);
@@ -213,8 +267,8 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
         const definitions = await getDictionaryDefinitions(word.fr_line);
         const newAnalysis = { ...analysis, definitions };
         
-        await updateWordAnalysis(word.id, { definitions });
-        onUpdateWord({ ...word, analysis: newAnalysis });
+        await updateWordAnalysis(word.id, { analysis: newAnalysis });
+        onUpdateWord(word.id, { ...word, analysis: newAnalysis });
     } catch (error) {
         console.error(error);
         toast({ variant: "destructive", title: "AI Error", description: "Could not fetch definitions." });
@@ -235,7 +289,7 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
         audioDataUri = audio;
         if (audioDataUri) {
           await updateWordAnalysis(word.id, { audio_data_uri: audioDataUri });
-          onUpdateWord({ ...word, audio_data_uri: audioDataUri });
+          onUpdateWord(word.id, { ...word, audio_data_uri: audioDataUri });
         }
       }
 
@@ -303,7 +357,9 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
                 <div className="text-sm text-muted-foreground">{word.en_line}</div>
             </TableCell>
             <TableCell>
-                <span className="font-mono text-sm tracking-wide text-muted-foreground">{word.ali_respell}</span>
+                <span className="font-mono text-sm tracking-wide text-muted-foreground">
+                    {word.ali_respell_trace ? <RenderTraceWithTooltips trace={word.ali_respell_trace} /> : word.ali_respell}
+                </span>
             </TableCell>
             <TableCell className="hidden md:table-cell">
                 <div className="flex flex-wrap gap-1">

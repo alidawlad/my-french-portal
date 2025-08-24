@@ -8,11 +8,22 @@ import { BookMarked, Layers } from 'lucide-react';
 
 // This is a server component to fetch initial data
 export default async function PronunciationModulePage() {
-    const savedWords = await getRuleBookWords();
+    const allSavedWords = await getRuleBookWords();
 
     // In a real app, you'd fetch module-specific words.
     // For now, we filter for words that have the 'pronunciation' tag.
-    const moduleWords = savedWords.filter(word => word.tags.includes('pronunciation'));
+    const moduleWords = allSavedWords.filter(word => word.tags.includes('pronunciation'));
+
+    const handleUpdateWord = async (wordId: string, updates: any) => {
+        "use server";
+        await updateWordAnalysis(wordId, updates);
+    };
+
+    const handleDeleteWord = async (wordId: string) => {
+        "use server";
+        await deleteWordFromRuleBook(wordId);
+    };
+
 
     return (
         <div className="space-y-8">
@@ -35,7 +46,7 @@ export default async function PronunciationModulePage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <RuleBook savedWords={moduleWords} onDeleteWord={deleteWordFromRuleBook} onUpdateWord={updateWordAnalysis} />
+                    <RuleBook savedWords={moduleWords} onDeleteWord={handleDeleteWord} onUpdateWord={handleUpdateWord} />
                 </CardContent>
             </Card>
         </div>

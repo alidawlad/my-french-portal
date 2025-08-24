@@ -1,4 +1,3 @@
-
 // src/components/ali-respeaker-client.tsx
 "use client";
 
@@ -172,7 +171,11 @@ export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] 
         <InputSection
           text={text}
           onTextChange={setText}
-          lines={{ en: enTrace.map(t => typeof t === 'string' ? t : toEN(t.out)).join(''), ar: arLine }}
+          lines={{ 
+              en: enTrace.map(t => typeof t === 'string' ? t : toEN(t.out)).join(''), 
+              ar: arLine 
+          }}
+          trace={enTrace.filter(t => typeof t !== 'string') as TokenTrace[]}
           showArabic={showArabic}
           enLineTraceComponent={renderEnLineWithTrace(enTrace)}
           moduleTags={moduleTags}

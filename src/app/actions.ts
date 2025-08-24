@@ -103,6 +103,7 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
                 fr_line: data.fr_line,
                 en_line: data.en_line,
                 ali_respell: data.ali_respell,
+                ali_respell_trace: data.ali_respell_trace || [],
                 analysis: data.analysis || {}, // Ensure analysis object exists
                 audio_data_uri: data.audio_data_uri || null, // Handle audio data
                 tags: data.tags || [],

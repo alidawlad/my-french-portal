@@ -26,6 +26,16 @@ export default async function DynamicModulePage({ params }: { params: { week: st
         moduleTags.every(tag => word.tags.includes(tag))
     );
 
+    const handleUpdateWord = async (wordId: string, updates: any) => {
+        "use server";
+        await updateWordAnalysis(wordId, updates);
+    };
+
+    const handleDeleteWord = async (wordId: string) => {
+        "use server";
+        await deleteWordFromRuleBook(wordId);
+    };
+
     return (
         <div className="space-y-8">
             <div>
@@ -49,7 +59,7 @@ export default async function DynamicModulePage({ params }: { params: { week: st
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <RuleBook savedWords={moduleWords} onDeleteWord={deleteWordFromRuleBook} onUpdateWord={updateWordAnalysis} />
+                    <RuleBook savedWords={moduleWords} onDeleteWord={handleDeleteWord} onUpdateWord={handleUpdateWord} />
                 </CardContent>
             </Card>
         </div>

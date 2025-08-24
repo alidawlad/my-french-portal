@@ -1,11 +1,10 @@
-
 // src/components/workbench/input-section.tsx
 "use client";
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { type Rule, RULES, type RuleCategory, getRuleForWord } from "@/lib/phonetics";
+import { type Rule, RULES, type RuleCategory, getRuleForWord, TokenTrace, toEN } from "@/lib/phonetics";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
 import { Volume2, Loader2, Bookmark, Wand2, Sparkles, BrainCircuit, MessageSquareQuote, ListFilter } from 'lucide-react';
@@ -23,6 +22,7 @@ type InputSectionProps = {
   text: string;
   onTextChange: (value: string) => void;
   lines: { en: string; ar: string };
+  trace: TokenTrace[];
   showArabic: boolean;
   enLineTraceComponent: React.ReactNode;
   moduleTags?: string[];
@@ -46,6 +46,7 @@ export function InputSection({
   text,
   onTextChange,
   lines,
+  trace,
   showArabic,
   enLineTraceComponent,
   moduleTags = [],
@@ -160,6 +161,7 @@ export function InputSection({
             fr_line: text,
             en_line: userMeaning,
             ali_respell: lines.en,
+            ali_respell_trace: trace.map(t => ({...t, out: toEN(t.out)})), // Save the trace with EN tokens
             analysis,
             audio_data_uri: audioData,
             tags: finalTags,
