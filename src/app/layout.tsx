@@ -1,7 +1,7 @@
 
 import type {Metadata} from 'next';
 import { Toaster } from "@/components/ui/toaster";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarItem, SidebarProvider } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarItem, SidebarProvider, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
 import { NavLink } from '@/components/nav-link';
 import { Home, NotebookText, BarChart, Layers } from 'lucide-react';
 import './globals.css';
@@ -62,11 +62,14 @@ export default function RootLayout({
                 </SidebarItem>
               </SidebarMenu>
             </SidebarContent>
+             <SidebarFooter>
+                <SidebarTrigger />
+             </SidebarFooter>
           </Sidebar>
           <SidebarInset>
-            <div className="p-4 md:p-6">
+            <main className="p-4 md:p-6 transition-[margin-left] group-data-[sidebar-collapsed=icon]:ml-[--sidebar-width-icon]">
                 {children}
-            </div>
+            </main>
             <Toaster />
           </SidebarInset>
         </SidebarProvider>
