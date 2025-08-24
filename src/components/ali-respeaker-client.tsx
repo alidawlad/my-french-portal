@@ -4,7 +4,6 @@
 import React, { useMemo, useState, useEffect, Fragment } from "react";
 import {
   SepKind,
-  transformWord,
   transformWordWithTrace,
   joinTokens,
   toArabic,
@@ -27,17 +26,18 @@ const TraceColors: Record<string, string> = {
     nasal: "bg-amber-100 dark:bg-amber-900/50",
     special: "bg-purple-100 dark:bg-purple-900/50",
     liaison: "bg-green-100 dark:bg-green-900/50",
-    silent: "bg-gray-100 dark:bg-gray-900/50",
+    silent: "bg-gray-200 dark:bg-gray-700/50",
     charMap: "bg-transparent",
     default: "bg-pink-100 dark:bg-pink-900/50"
 };
 
 const getTraceColor = (trace: TokenTrace) => {
+    if (!trace.changed) return TraceColors.charMap;
     if (trace.ruleKey?.includes('nas')) return TraceColors.nasal;
-    if (trace.ruleKey?.includes('Glide') || trace.ruleKey?.includes('Est') || trace.ruleKey?.includes('Il')) return TraceColors.special;
+    if (trace.ruleKey?.includes('Glide') || trace.ruleKey?.includes('Est') || trace.ruleKey?.includes('Il') || trace.ruleKey?.includes('quK')) return TraceColors.special;
     if (trace.ruleKey === 'finalDrop') return TraceColors.silent;
-    if (trace.changed) return TraceColors.default;
-    return TraceColors.charMap;
+    if (trace.ruleKey?.includes('eu')) return TraceColors.vowel;
+    return TraceColors.default;
 }
 
 export function AliRespeakerClient() {
@@ -70,21 +70,37 @@ export function AliRespeakerClient() {
   }, [toast]);
 
  const { enTrace, arLine } = useMemo(() => {
-    const words = text.split(/(\s+|(?<=[.,!?])|(?=['’]))/u).filter(Boolean);
+    const words = text.split(/(\s+)/u).filter(Boolean);
     const outAR: string[] = [];
     const enTrace: (TokenTrace | string)[] = [];
     
     for (let i = 0; i < words.length; i++) {
         const w = words[i];
 
+        if (w.includes('-') || w.includes('–') || w.includes('—')) {
+            const subWords = w.split(/[-–—]/);
+            subWords.forEach((subWord, idx) => {
+              if (subWord) {
+                const transformed = transformWordWithTrace(subWord);
+                enTrace.push(...transformed);
+                outAR.push(joinTokens(transformed.map(t=>t.out), toArabic));
+              }
+              if (idx < subWords.length - 1) {
+                // Join with space on EN-line, but nothing on AR-line
+                enTrace.push(' ');
+              }
+            });
+            continue;
+        }
+
         // Liaison logic for six/dix
         if ((w.toLowerCase() === 'six' || w.toLowerCase() === 'dix') && i + 1 < words.length) {
-            const nextWord = words.find((next, idx) => idx > i && next.trim());
+            const nextWord = words.find((next, idx) => idx > i && next.trim() && /[\p{L}]/u.test(next));
             if (nextWord && /^[aeiouyàâäéèêëîïôöùûüœh]/i.test(nextWord)) {
                 const traces = transformWordWithTrace(w);
                 if (traces.length > 0) {
                    const lastTrace = traces[traces.length - 1];
-                   if (lastTrace.out === 'S') {
+                   if (lastTrace.out.toUpperCase() === 'S') {
                        lastTrace.out = 'Z‿';
                        lastTrace.ruleKey = 'sixDixLiaison';
                        lastTrace.note = `${w} + vowel → liaison with /z/`;
@@ -96,21 +112,6 @@ export function AliRespeakerClient() {
                 continue;
             }
         }
-        
-       if (w.includes('-') || w.includes('–') || w.includes('—')) {
-        const subWords = w.split(/[-–—]/);
-        subWords.forEach((subWord, idx) => {
-          if (subWord) {
-            const transformed = transformWordWithTrace(subWord);
-            enTrace.push(...transformed);
-            outAR.push(joinTokens(transformed.map(t=>t.out), toArabic));
-          }
-          if (idx < subWords.length - 1) {
-            enTrace.push(' ');
-          }
-        })
-        continue;
-       }
 
        if (!/[\p{L}'’]/u.test(w)) {
         outAR.push(w);
@@ -179,17 +180,17 @@ export function AliRespeakerClient() {
   
   const renderEnLineWithTrace = (trace: (TokenTrace | string)[]) => {
     const sep = separator === 'none' ? '' : SEP_MAP[separator] ?? '-';
-    let result = [];
+    let result: React.ReactNode[] = [];
     
-    for(let i=0; i < trace.length; i++) {
-        const item = trace[i];
+    trace.forEach((item, i) => {
         if (typeof item === 'string') {
             result.push(<span key={`str-${i}`}>{item}</span>);
-            continue;
+            return;
         }
 
-        const isSilent = item.out.startsWith('(');
-        let enToken = isSilent ? item.out.slice(1, -1) : toEN(item.out);
+        const isSilent = item.src.startsWith('(') || item.out.startsWith('(');
+        let enToken = isSilent ? (item.out.length > 2 ? toEN(item.out.slice(1, -1)) : '') : toEN(item.out);
+
         const isLiaison = enToken.includes('‿');
         if (isLiaison) {
             enToken = enToken.replace('‿', '');
@@ -218,10 +219,18 @@ export function AliRespeakerClient() {
          if (isLiaison) {
             result.push(<span key={`liaison-${i}`} className="text-green-500">‿</span>)
         }
-        if(i < trace.length -1 && typeof trace[i+1] !== 'string' && sep && !isLiaison) {
-            result.push(<span key={`sep-${i}`}>{sep}</span>);
+        
+        // Separator logic
+        const nextItem = trace[i+1];
+        const isLastItem = i === trace.length - 1;
+        if (!isLastItem && typeof nextItem !== 'string' && sep && !isLiaison) {
+            // Check if next item is just punctuation
+            if (nextItem && !/[\p{P}]/u.test(nextItem.src)) {
+                 result.push(<span key={`sep-${i}`}>{sep}</span>);
+            }
         }
-    }
+    });
+
     return <>{result}</>
   }
 

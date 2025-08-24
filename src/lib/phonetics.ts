@@ -83,52 +83,27 @@ export const getRuleForWord = (word: string): Rule | undefined => {
     return sortedRules.find(r => r.re.test(lw));
 }
 
-export const Examples: Array<{ label: string; text: string }> = [
-  { label: "Thomas", text: "Thomas" },
-  { label: "William", text: "William" },
-  { label: "Yasmine", text: "Yasmine" },
-  { label: "Zohra", text: "Zohra" },
-  { label: "Les amis arrivent", text: "Les amis arrivent" },
-];
-
-export const smokeTests = [
-    "Yasmine",
-    "Thomas",
-    "Zohra",
-    "fille",
-    "garçon",
-    "eau",
-    "un",
-    "in",
-    "eu",
-    "façade",
-    "ancien",
-    "chien",
-    "queue",
-    "poisson",
-    "amis",
-    "froid",
-];
-
-
 export const SEP_MAP: Record<SepKind, string> = { hyphen: "\u2011", middot: "·", space: " ", none: "" };
 
-// Based on the "CaReFuL" rule. Final C, R, F, L are often pronounced.
-const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l', 'q'];
-// Exceptions to the silent final consonant rule.
-const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'anaïs', 'reims', 'six', 'dix']);
-
-const COMMON_FIXES: Record<string, string> = {
-    "cava": "ça va",
-    "ca va": "sa va",
-    "ça va": "sa va",
-    "bein": "bien",
-    "vaudrais": "voudrais",
+const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l'];
+const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'anaïs', 'reims', 'six', 'dix', 'cinq']);
+const NUMBER_EXCEPTIONS: Record<string, TokenTrace[]> = {
+    'un':     [{ src: 'un', out: 'UH~', changed: true, ruleKey: 'nasUN', note: 'un → un (nasal)'}],
+    'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'euEU', note: 'eux → ö' }],
+    'trois':  [{ src: 't', out: 'T'}, { src: 'r', out: 'R'}, { src: 'oi', out: 'WA', changed: true, ruleKey: 'oi', note: 'oi → wa'}, {src: 's', out: '(S)', changed: true, ruleKey: 'finalDrop', note: 'Silent final s'}],
+    'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalDrop', note: 'Silent final e'}],
+    'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'softC', note: 'c before i → s'}, { src: 'inq', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'k', out: 'K'}],
+    'six':    [{ src: 's', out: 'S'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
+    'sept':   [{ src: 's', out: 'S'}, { src: 'e', out: 'EH'}, { src: 'p', out: '(P)', changed: true, ruleKey: 'septPdrop', note: 'p is silent in sept'}, { src: 't', out: 'T'}],
+    'huit':   [{ src: 'h', out: '(H)', changed: true, ruleKey: 'hSilent', note: 'h is silent'}, { src: 'u', out: 'Ü'}, { src: 'i', out: 'EE'}, { src: 't', out: 'T'}],
+    'neuf':   [{ src: 'n', out: 'N'}, { src: 'eu', out: 'EU', changed: true, ruleKey: 'euEU', note: 'eu → ö'}, { src: 'f', out: 'F'}],
+    'dix':    [{ src: 'd', out: 'D'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
 };
 
 
 export const toArabic = (t: Token): string => {
-  switch (t) {
+  const pureToken = t.replace('‿', '');
+  switch (pureToken) {
     case "AH": return "ا";
     case "AY": return "ي";
     case "EH": return "إِ";
@@ -160,17 +135,17 @@ export const toArabic = (t: Token): string => {
     case "H": return "ه";
     case "W": return "و";
     case "X": return "كس";
-    default:
-      if (t.endsWith("~")) {
-        const base = toArabic(t.replace("~", ""));
-        return base + "ن"; // Using ن for nasalization
-      }
-      return t;
+    case "AH~": return "ان";
+    case "OH~": return "ون";
+    case "EH~": return "ين";
+    case "UH~": return "ون"; // No direct equivalent for /œ̃/
+    default: return pureToken;
   }
 };
 
 export const toEN = (t: Token): string => {
-  switch (t) {
+  const pureToken = t.replace('‿', '');
+  switch (pureToken) {
     case "AH": return "ah";
     case "AY": return "ay";
     case "EH": return "eh";
@@ -191,7 +166,12 @@ export const toEN = (t: Token): string => {
     case "OH~": return "oh(n)";
     case "EH~": return "eh(n)";
     case "UH~": return "un";
-    default: return t.toLowerCase();
+    case "(S)": return "s";
+    case "(P)": return "p";
+    case "(E)": return "e";
+    case "(H)": return "h";
+    case "(T)": return "t";
+    default: return pureToken.toLowerCase();
   }
 };
 
@@ -199,266 +179,184 @@ const isVowel = (c: string) => /[aeiouyàâäéèêëîïôöùûüœ]/i.test(c)
 
 export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
   let w = wordRaw.normalize("NFC").replace(/[\.,!\?]$/, '');
+  let lw = w.toLowerCase();
   if (!/[\p{L}]/u.test(w)) return [{ src: w, out: w as Token, changed: false }];
   
-  let lw = w.toLowerCase();
-
-  // L0: Pre-processing & Normalization
-  if (COMMON_FIXES[lw]) {
-      lw = COMMON_FIXES[lw];
+  if (NUMBER_EXCEPTIONS[lw]) {
+      return NUMBER_EXCEPTIONS[lw];
   }
-  
+
   const traces: TokenTrace[] = [];
   let i = 0;
 
-  while(i < lw.length) {
-    const start = i;
-    let end = i + 1;
-    let token: Token | null = null;
-    let ruleKey: string | null = null;
+  // Pre-tokenization replacement pass
+  lw = lw.replace(/qu/gi, "{K}");
+  lw = lw.replace(/œu/gi, "{EU}");
+  lw = lw.replace(/eu/gi, "{EU}");
+  lw = lw.replace(/ou(?=[iy])/gi, "{W}");
+  const nasalRegex = /(in|im|yn|ym|ain|ein|an|am|en|em|on|om|un|um)(?=$|[^a-zàâäéèêëîïôöùûüœ]|[bcdfghjklmnpqrstvwxz])/ig;
+  lw = lw.replace(nasalRegex, (match, p1) => {
+    const m = p1.toLowerCase();
+    if (['on', 'om'].includes(m)) return `{OH~:${p1}}`;
+    if (['un', 'um'].includes(m)) return `{UH~:${p1}}`;
+    if (['an','am','en','em'].includes(m)) return `{AH~:${p1}}`;
+    return `{EH~:${p1}}`; // 'in', 'im', etc.
+  });
+  lw = lw.replace(/ien(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{Y}{EH~:ien}");
+  lw = lw.replace(/ez(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{EH:ez}");
 
-    // This is a simplified transformation logic. A full implementation
-    // would require a more sophisticated state machine or regex-based replacement
-    // that builds the trace alongside the transformation.
-    
-    // Placeholder logic for demonstration:
+
+  while(i < lw.length) {
     const char = lw[i];
     
-    // Elisions & function words
+    if (char === '{') {
+        const end = lw.indexOf("}", i);
+        const content = lw.slice(i+1, end);
+        const [token, src] = content.split(':');
+        traces.push({
+            src: src || token,
+            out: token,
+            changed: true,
+            ruleKey: `rule:${token}`,
+            note: `${src || token} → ${toEN(token)}`
+        });
+        i = end + 1;
+        continue;
+    }
+
     if (lw.substring(i).match(/^c['’]\s*est\b/i)) {
       const match = lw.substring(i).match(/^c['’]\s*est\b/i)!;
       traces.push({ src: match[0], out: 'S', ruleKey: 'cEst', changed: true, note: "c'est -> seh" });
       traces.push({ src: '', out: 'EH', ruleKey: 'cEst', changed: true, note: "c'est -> seh" });
       i += match[0].length; continue;
     }
-    if (lw.substring(i).match(/^s['’]\s*il\b/i)) {
-      const match = lw.substring(i).match(/^s['’]\s*il\b/i)!;
-      traces.push({ src: match[0], out: 'S', ruleKey: 'sIl', changed: true, note: "s'il -> seel" });
-      traces.push({ src: '', out: 'EE', ruleKey: 'sIl', changed: true, note: "s'il -> seel" });
-      traces.push({ src: '', out: 'L', ruleKey: 'sIl', changed: true, note: "s'il -> seel" });
-      i += match[0].length; continue;
+
+    // Digraphs & Trigraphs
+    const twoChars = lw.substring(i, i+2);
+    const threeChars = lw.substring(i, i+3);
+    if (threeChars === 'eau') {
+        traces.push({src: 'eau', out: 'OH', ruleKey: 'eau', changed: true, note: 'eau → oh'});
+        i+=3; continue;
     }
-    
-    // Digraphs
-    if (lw.substring(i, i+2) === 'ou') {
-      if (isVowel(lw[i+2])) {
-        traces.push({src: 'ou', out: 'W', ruleKey: 'wGlide', changed: true, note: "ou+vowel -> w"});
-        i += 2; continue;
-      }
-      traces.push({src: 'ou', out: 'OO', ruleKey: 'ou', changed: true, note: 'ou -> oo'});
+    if (twoChars === 'au') {
+        traces.push({src: 'au', out: 'OH', ruleKey: 'auOH', changed: true, note: 'au → oh'});
+        i+=2; continue;
+    }
+    if (twoChars === 'oi') {
+      traces.push({src: 'oi', out: 'WA', ruleKey: 'oi', changed: true, note: 'oi → wa'});
       i+=2; continue;
     }
-     if (lw.substring(i, i+2) === 'oi') {
-      traces.push({src: 'oi', out: 'WA', ruleKey: 'oi', changed: true, note: 'oi -> wa'});
+    if (twoChars === 'ou') {
+      traces.push({src: 'ou', out: 'OO', ruleKey: 'ou', changed: true, note: 'ou → oo'});
       i+=2; continue;
     }
-    if (lw.substring(i, i+2) === 'ch') {
-      traces.push({src: 'ch', out: 'SH', ruleKey: 'ch', changed: true, note: 'ch -> sh'});
+    if (twoChars === 'ch') {
+      traces.push({src: 'ch', out: 'SH', ruleKey: 'ch', changed: true, note: 'ch → sh'});
+      i+=2; continue;
+    }
+    if (twoChars === 'gn') {
+      traces.push({src: 'gn', out: 'NY', ruleKey: 'gn', changed: true, note: 'gn → ny'});
       i+=2; continue;
     }
 
+
     // Default character mapping
-    const basicTokens = transformWord(char);
-    const outToken = basicTokens.length > 0 ? basicTokens[0] : char.toUpperCase();
+    let outToken: Token;
+    let changed = false;
+    let ruleKey = 'charMap';
+    let note = '';
+
+    switch(char) {
+        case 'a': case 'à': case 'â': outToken = 'AH'; break;
+        case 'b': outToken = 'B'; break;
+        case 'c': {
+            const nextIsSoft = i + 1 < lw.length && ['e','é','è','ê','i','î','y'].includes(lw[i+1]);
+            outToken = nextIsSoft ? 'S' : 'K';
+            if (nextIsSoft) { changed=true; ruleKey='softC'; note='c before e/i/y → s'; }
+            break;
+        }
+        case 'ç': outToken = 'S'; changed=true; ruleKey='cedilla'; note='ç → s'; break;
+        case 'd': outToken = 'D'; break;
+        case 'e': case 'é': case 'è': case 'ê': outToken = (char === 'é' ? 'AY' : 'EH'); break;
+        case 'f': outToken = 'F'; break;
+        case 'g': {
+            const nextIsSoft = i + 1 < lw.length && ['e','é','è','ê','i','î','y'].includes(lw[i+1]);
+            outToken = nextIsSoft ? 'ZH' : 'G';
+            if (nextIsSoft) { changed=true; ruleKey='softG'; note='g before e/i/y → zh'; }
+            break;
+        }
+        case 'h': outToken = '(H)'; changed=true; ruleKey='hSilent'; note='h is silent'; break;
+        case 'i': case 'î': case 'ï': outToken = 'EE'; break;
+        case 'j': outToken = 'ZH'; changed=true; ruleKey='jZH'; note='j → zh'; break;
+        case 'k': outToken = 'K'; break;
+        case 'l': outToken = 'L'; break;
+        case 'm': outToken = 'M'; break;
+        case 'n': outToken = 'N'; break;
+        case 'o': case 'ô': outToken = 'OH'; break;
+        case 'p': outToken = 'P'; break;
+        case 'r': outToken = 'R'; break;
+        case 's': {
+            const betweenVowels = i > 0 && i + 1 < lw.length && isVowel(lw[i-1]) && isVowel(lw[i+1]);
+            outToken = betweenVowels ? 'Z' : 'S';
+            if(betweenVowels) { changed=true; ruleKey='sBetweenVowels'; note='s between vowels → z'; }
+            break;
+        }
+        case 't': outToken = 'T'; break;
+        case 'u': case 'û': case 'ù': outToken = 'Ü'; break;
+        case 'v': outToken = 'V'; break;
+        case 'w': outToken = 'W'; break;
+        case 'x': outToken = 'X'; break;
+        case 'y': outToken = isVowel(lw[i+1] || '') ? 'Y' : 'EE'; break;
+        case 'z': outToken = 'Z'; break;
+        default: outToken = char.toUpperCase();
+    }
+    
     traces.push({
         src: char,
         out: outToken,
-        changed: toEN(outToken) !== char.toLowerCase(),
-        ruleKey: 'charMap'
+        changed: toEN(outToken) !== char.toLowerCase() || changed,
+        ruleKey: ruleKey,
+        note: note
     });
     i++;
   }
   
-  // Final consonant logic needs to be re-applied here on the trace
-  let idx = traces.length - 1;
-  while (idx >= 0 && !/^[A-Z~]+$/i.test(traces[idx].out)) idx--;
-  
-  if (idx >= 0) {
-    const lastTrace = traces[idx];
-    const orig = w.toLowerCase();
-    const lastCharMatch = orig.match(/[a-zàâäéèêëîïôöùûüœ](?=[^a-zàâäéèêëîïôöùûüœ]*$)/i);
-    const lastChar = lastCharMatch ? lastCharMatch[0].toLowerCase() : "";
+  // Final consonant logic
+  let lastAlphaIndex = -1;
+  for (let j = traces.length - 1; j >= 0; j--) {
+      if (traces[j].out.match(/^[A-Z]$/i) && !traces[j].out.startsWith('(')) {
+          lastAlphaIndex = j;
+          break;
+      }
+  }
 
-    if (!FINAL_CONSONANT_EXCEPTIONS.has(orig) &&
+  if (lastAlphaIndex !== -1) {
+    const lastTrace = traces[lastAlphaIndex];
+    const lastChar = lastTrace.src.toLowerCase();
+
+    if (!FINAL_CONSONANT_EXCEPTIONS.has(w.toLowerCase()) &&
         !PRONOUNCED_FINALS.includes(lastChar) &&
-        /^[BDGPSXTZ]$/.test(lastTrace.out)) {
-      lastTrace.out = `(${lastTrace.src})`; // Mark as silent
+        /^[BDGPSTXZ]$/.test(lastTrace.out)) {
+      lastTrace.out = `(${lastTrace.src.toUpperCase()})`;
       lastTrace.ruleKey = 'finalDrop';
       lastTrace.changed = true;
-      lastTrace.note = `Silent final consonant: '${lastTrace.src}'`;
+      lastTrace.note = `Silent final consonant`;
     }
   }
-
-
-  return traces;
-};
-
-
-export const transformWord = (wordRaw: string): Token[] => {
-  let w = wordRaw.normalize("NFC").replace(/[\.,!\?]$/, '');
-  if (!/[\p{L}]/u.test(w)) return [w as Token];
   
-  let lw = w.toLowerCase();
-
-  // L0: Pre-processing & Normalization
-  if (COMMON_FIXES[lw]) {
-      lw = COMMON_FIXES[lw];
-  }
-  
-  // A) Rule Patches (ordered by spec)
-  if (lw === 'sept') {
-      lw = "set"; // Word exception for sept
-  }
-  
-  // A.1. qu -> K
-  lw = lw.replace(/qu/gi, "{K}");
-  // A.2. eu/œu -> EU
-  lw = lw.replace(/œu/gi, "{EU}");
-  lw = lw.replace(/eu/gi, "{EU}");
-
-  // A.3. Nasal environment guard
-  const nasalRegex = /(in|im|yn|ym|ain|ein|an|am|en|em|on|om|un|um)(?=$|[^a-zàâäéèêëîïôöùûüœ]|[bcdfghjklmnpqrstvwxz])/ig;
-  lw = lw.replace(nasalRegex, (match) => {
-    const m = match.toLowerCase();
-    if (['on', 'om'].includes(m)) return '{ON_NAS}';
-    if (['un', 'um'].includes(m)) return '{UN_NAS}';
-    if (['an','am','en','em'].includes(m)) return '{AN_NAS}';
-    return '{IN_NAS}';
-  });
-  lw = lw.replace(/ien(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{Y_GLIDE}{IN_NAS}");
-
-  // A.4. Elisions & function words
-  lw = lw.replace(/\bc['’]\s*est\b/gi, "{C_EST}");
-  lw = lw.replace(/\bs['’]\s*il\b/gi, "{SIL}");
-  lw = lw.replace(/c(?=(?:['’]\s*)?[eéiïy])/g, "{S}"); // soft c across apostrophes
-  
-  // A.5 Digraphs & Trigraphs Pass
-  lw = lw.replace(/ç/g, "{S}");
-  lw = lw.replace(/eau/g, "{OH}");
-  lw = lw.replace(/au/g, "{OH}");
-  lw = lw.replace(/oi/g, "{WA}");
-  lw = lw.replace(/ui/g, "{Ü}{EE}");
-
-  // A.6. w-glide for "oui"
-  lw = lw.replace(/ou(?=[iy])/g, "{W}"); 
-  lw = lw.replace(/ou/g, "{OO}");
-  
-  // A.7 Accented /ɛ/ in plaît (targeted)
-  lw = lw.replace(/aî/gi, "{EH}");
-  
-  // A.8. Verb endings
-  lw = lw.replace(/(?<!['’])(?:ai|ais|ait|aient)(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{EH}");
-  lw = lw.replace(/ez(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{EH}");
-
-
-  // A.9. Consonant clusters & special consonants
-  lw = lw.replace(/ch/g, "sh"); // Direct replacement instead of token
-  lw = lw.replace(/gn/g, "{NY}");
-  lw = lw.replace(/j/g, "{ZH}");
-  lw = lw.replace(/g(?=[eéiïy])/g, "{ZH}");
-  lw = lw.replace(/^h/g, ""); // Only initial 'h' is silent for liaison purposes.
-  lw = lw.replace(/th/g, "{T}");
-
-  // A.10. Accented vowels
-  lw = lw.replace(/[é]/g, "{AY}");
-  lw = lw.replace(/[èêë]/g, "{EH}");
-  lw = lw.replace(/[àâä]/g, "{AH}");
-  lw = lw.replace(/[îï]/g, "{EE}");
-  lw = lw.replace(/[ôö]/g, "{OH}");
-  lw = lw.replace(/[ùû]/g, "{Ü}"); // note: ü already handled by ui
-  
-  // A.11. Schwa hygiene
-  lw = lw.replace(/e(?=r[bcdfghjklmnpqrstvwxyz])/g, "{EH}");
-  lw = lw.replace(/e(?=([bcdfghjklmnpqrstvwxyz])\1)/g, "{EH}");
-
-
-  const tokens: Token[] = [];
-  for (let i = 0; i < lw.length; i++) {
-    const ch = lw[i];
-    const prev = lw[i - 1];
-    const next = lw[i + 1];
-
-    if (lw.startsWith("{", i)) {
-      const end = lw.indexOf("}", i);
-      const tag = lw.slice(i + 1, end);
-      switch (tag) {
-        case "OH": tokens.push("OH"); break;
-        case "OO": tokens.push("OO"); break;
-        case "EU": tokens.push("EU"); break;
-        case "WA": tokens.push("WA"); break;
-        case "W": tokens.push("W"); break;
-        case "AN_NAS": tokens.push("AH~"); break;
-        case "ON_NAS": tokens.push("OH~"); break;
-        case "IN_NAS": tokens.push("EH~"); break;
-        case "UN_NAS": tokens.push("UH~"); break;
-        case "Y_GLIDE": tokens.push("Y"); break;
-        case "NY": tokens.push("NY"); break;
-        case "ZH": tokens.push("ZH"); break;
-        case "S": tokens.push("S"); break;
-        case "K": tokens.push("K"); break;
-        case "AY": tokens.push("AY"); break;
-        case "EH": tokens.push("EH"); break;
-        case "AH": tokens.push("AH"); break;
-        case "EE": tokens.push("EE"); break;
-        case "T": tokens.push("T"); break;
-        case "Ü": tokens.push("Ü"); break;
-        case "C_EST": tokens.push("S", "EH"); break;
-        case "SIL": tokens.push("S", "EE", "L"); break;
-        default: tokens.push(tag as Token);
+  // Final 'e' silent
+  if (traces.length > 0 && traces[traces.length - 1].src === 'e') {
+      const lastTrace = traces[traces.length - 1];
+      if (lastTrace.ruleKey !== 'finalDrop') { // Avoid double marking
+        lastTrace.out = '(E)';
+        lastTrace.ruleKey = 'finalDrop';
+        lastTrace.changed = true;
+        lastTrace.note = 'Silent final e';
       }
-      i = end; continue;
-    }
-
-    if (ch === 'h') continue; // Medial 'h' is silent
-
-    if (ch === "u") { tokens.push("Ü"); continue; }
-    if (ch === "a") { tokens.push("AH"); continue; }
-    if (ch === "y") { const nextIsVowel = isVowel(next || ""); tokens.push(nextIsVowel ? "Y" : "EE"); continue; }
-    if (ch === "i") { tokens.push("EE"); continue; }
-    if (ch === "o") { tokens.push("OH"); continue; }
-    if (ch === "e") {
-      // final -es is silent, final -e is silent, otherwise 'uh'
-      if (next === 's' && (lw[i+2] === undefined)) {
-         i++; continue;
-      }
-      if (next === undefined) continue;
-      tokens.push("UH"); continue;
-    }
-
-
-    if (ch === "s") {
-      const betweenVowels = isVowel(prev || "") && isVowel(next || "");
-      tokens.push(betweenVowels ? "Z" : "S"); continue;
-    }
-
-    const table: Record<string, Token> = { b:"B", c:"K", d:"D", f:"F", g:"G", k:"K", l:"L", m:"M", n:"N", p:"P", q:"K", r:"R", t:"T", v:"V", w:"W", x:"X", z:"Z" };
-    if (table[ch]) { tokens.push(table[ch]); continue; }
-
-    tokens.push(ch.toUpperCase() as Token);
   }
 
-  // Final-consonant logic (CaReFuL)
-  let idx = tokens.length - 1;
-  while (idx >= 0 && !/^[A-Z~]+$/i.test(tokens[idx])) idx--;
-  
-  if (idx >= 0) {
-    const orig = w.toLowerCase();
-    const lastCharMatch = orig.match(/[a-zàâäéèêëîïôöùûüœ](?=[^a-zàâäéèêëîïôöùûüœ]*$)/i);
-    const lastChar = lastCharMatch ? lastCharMatch[0].toLowerCase() : "";
-
-    if (!FINAL_CONSONANT_EXCEPTIONS.has(orig) &&
-        !PRONOUNCED_FINALS.includes(lastChar) &&
-        /^[BDGPSXTZ]$/.test(tokens[idx])) {
-      tokens.splice(idx, 1);
-    }
-  }
-
-  return tokens;
+  return traces.filter(t => !t.out.startsWith('(') || t.out.length > 3);
 };
-
-export const joinTokensEnWith = (tokens: Token[], sep: string) => tokens.map(toEN).join(sep).trim();
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
-
-    
