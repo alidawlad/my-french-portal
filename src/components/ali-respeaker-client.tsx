@@ -1,3 +1,4 @@
+
 // src/components/ali-respeaker-client.tsx
 "use client";
 
@@ -35,8 +36,8 @@ const getTraceColor = (trace: TokenTrace) => {
     if (!trace.changed) return TraceColors.charMap;
     if (trace.ruleKey?.includes('nas')) return TraceColors.nasal;
     if (trace.ruleKey?.includes('Glide') || trace.ruleKey?.includes('Est') || trace.ruleKey?.includes('Il') || trace.ruleKey?.includes('quK')) return TraceColors.special;
-    if (trace.ruleKey === 'finalDrop') return TraceColors.silent;
-    if (trace.ruleKey?.includes('eu')) return TraceColors.vowel;
+    if (trace.ruleKey === 'finalDrop' || trace.ruleKey === 'septPdrop' || trace.ruleKey === 'hSilent') return TraceColors.silent;
+    if (trace.ruleKey?.includes('eu') || trace.ruleKey?.includes('oi') || trace.ruleKey?.includes('eau')) return TraceColors.vowel;
     return TraceColors.default;
 }
 
@@ -83,17 +84,15 @@ export function AliRespeakerClient() {
               if (subWord) {
                 const transformed = transformWordWithTrace(subWord);
                 enTrace.push(...transformed);
-                outAR.push(joinTokens(transformed.map(t=>t.out), toArabic));
+                outAR.push(joinTokens(transformed.map(t=>t.out).filter(o => !o.startsWith('(')), toArabic));
               }
               if (idx < subWords.length - 1) {
-                // Join with space on EN-line, but nothing on AR-line
                 enTrace.push(' ');
               }
             });
             continue;
         }
 
-        // Liaison logic for six/dix
         if ((w.toLowerCase() === 'six' || w.toLowerCase() === 'dix') && i + 1 < words.length) {
             const nextWord = words.find((next, idx) => idx > i && next.trim() && /[\p{L}]/u.test(next));
             if (nextWord && /^[aeiouyàâäéèêëîïôöùûüœh]/i.test(nextWord)) {
@@ -108,7 +107,7 @@ export function AliRespeakerClient() {
                    }
                 }
                 enTrace.push(...traces);
-                outAR.push(joinTokens(traces.map(t=>t.out), toArabic));
+                outAR.push(joinTokens(traces.map(t=>t.out).filter(o => !o.startsWith('(')), toArabic));
                 continue;
             }
         }
@@ -120,7 +119,7 @@ export function AliRespeakerClient() {
       }
       const transformed = transformWordWithTrace(w);
       enTrace.push(...transformed);
-      outAR.push(joinTokens(transformed.map(t=>t.out), toArabic));
+      outAR.push(joinTokens(transformed.map(t=>t.out).filter(o => !o.startsWith('(')), toArabic));
     };
 
     return {
@@ -188,8 +187,8 @@ export function AliRespeakerClient() {
             return;
         }
 
-        const isSilent = item.src.startsWith('(') || item.out.startsWith('(');
-        let enToken = isSilent ? (item.out.length > 2 ? toEN(item.out.slice(1, -1)) : '') : toEN(item.out);
+        const isSilent = item.out.startsWith('(') && item.out.endsWith(')');
+        let enToken = isSilent ? toEN(item.out.slice(1, -1)) : toEN(item.out);
 
         const isLiaison = enToken.includes('‿');
         if (isLiaison) {
@@ -200,16 +199,16 @@ export function AliRespeakerClient() {
             <TooltipProvider key={`trace-${i}`}>
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
-                         <span className={`px-0.5 rounded-sm ${isSilent ? 'line-through text-muted-foreground' : getTraceColor(item)}`}>
+                         <span className={`px-0.5 rounded-sm ${isSilent ? 'line-through text-muted-foreground/80' : getTraceColor(item)}`}>
                             {enToken}
                          </span>
                     </TooltipTrigger>
                     {item.changed && 
                         <TooltipContent>
-                            <p className="font-mono text-xs">
+                            <p className="font-mono text-sm">
                                 <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{toEN(item.out)}</span>
                             </p>
-                            {item.note && <p className="text-xs text-muted-foreground">{item.note}</p>}
+                            {item.note && <p className="text-sm text-muted-foreground">{item.note}</p>}
                         </TooltipContent>
                     }
                 </Tooltip>
@@ -217,15 +216,13 @@ export function AliRespeakerClient() {
         );
         result.push(node);
          if (isLiaison) {
-            result.push(<span key={`liaison-${i}`} className="text-green-500">‿</span>)
+            result.push(<span key={`liaison-${i}`} className="text-green-600 dark:text-green-400">‿</span>)
         }
         
-        // Separator logic
         const nextItem = trace[i+1];
         const isLastItem = i === trace.length - 1;
         if (!isLastItem && typeof nextItem !== 'string' && sep && !isLiaison) {
-            // Check if next item is just punctuation
-            if (nextItem && !/[\p{P}]/u.test(nextItem.src)) {
+            if (nextItem && !nextItem.out.startsWith('(')) {
                  result.push(<span key={`sep-${i}`}>{sep}</span>);
             }
         }
