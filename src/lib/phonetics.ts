@@ -90,13 +90,13 @@ const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l'];
 const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'anaïs', 'reims', 'six', 'dix', 'cinq']);
 const NUMBER_EXCEPTIONS: Record<string, TokenTrace[]> = {
     'un':     [{ src: 'un', out: 'UH~', changed: true, ruleKey: 'nasUN', note: 'un → nasal /œ̃/'}],
-    'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö' }],
-    'trois':  [{ src: 't', out: 'T'}, { src: 'r', out: 'R'}, { src: 'oi', out: 'WA', changed: true, ruleKey: 'oi', note: 'oi → wa'}, {src: 's', out: '(S)', changed: true, ruleKey: 'finalDrop', note: 'Silent final s'}],
+    'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö' }, {src: 'x', out: '(X)', changed: true, ruleKey: 'finalDrop', note: 'Silent final consonant'}],
+    'trois':  [{ src: 't', out: 'T'}, { src: 'r', out: 'R'}, { src: 'oi', out: 'WA', changed: true, ruleKey: 'oi', note: 'oi → wa'}, {src: 's', out: '(S)', changed: true, ruleKey: 'finalDrop', note: 'Silent final consonant'}],
     'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalDrop', note: 'Silent final e'}],
     'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'softC', note: 'c before i → s'}, { src: 'in', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'q', out: 'K'}],
     'six':    [{ src: 's', out: 'S'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
-    'sept':   [{ src: 's', out: 'S'}, { src: 'e', out: 'EH'}, { src: 'p', out: '(P)', changed: true, ruleKey: 'septPdrop', note: 'p is silent in sept'}, { src: 't', out: 'T'}],
-    'huit':   [{ src: 'h', out: '(H)', changed: true, ruleKey: 'hSilent', note: 'h is silent'}, { src: 'ui', out: 'ÜEE', changed: true, ruleKey: 'uiGlide', note: 'ui → ü+ee'}, {src: 't', out: 'T'}],
+    'sept':   [{ src: 's', out: 'S'}, { src: 'e', out: 'EH'}, { src: 'p', out: '(P)', changed: true, ruleKey: 'septPdrop', note: 'The p in "sept" is silent'}, { src: 't', out: 'T'}],
+    'huit':   [{ src: 'h', out: '(H)', changed: true, ruleKey: 'hSilent', note: 'The "h" is silent in French'}, { src: 'ui', out: 'ÜEE', changed: true, ruleKey: 'uiGlide', note: 'ui → ü+ee'}, {src: 't', out: 'T'}],
     'neuf':   [{ src: 'n', out: 'N'}, { src: 'eu', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö'}, { src: 'f', out: 'F'}],
     'dix':    [{ src: 'd', out: 'D'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
 };
@@ -146,7 +146,7 @@ export const toArabic = (t: Token): string => {
 };
 
 export const toEN = (t: Token): string => {
-  const pureToken = t.replace('‿', '');
+  const pureToken = t.replace(/[()‿]/g, '');
   switch (pureToken) {
     case "AH": return "ah";
     case "AY": return "ay";
@@ -168,11 +168,6 @@ export const toEN = (t: Token): string => {
     case "OH~": return "oh(n)";
     case "EH~": return "eh(n)";
     case "UH~": return "un";
-    case "(S)": return "s";
-    case "(P)": return "p";
-    case "(E)": return "e";
-    case "(H)": return "h";
-    case "(T)": return "t";
     default: return pureToken.toLowerCase();
   }
 };
@@ -291,7 +286,7 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
             if (nextIsSoft) { changed=true; ruleKey='softG'; note='g before e/i/y → zh'; }
             break;
         }
-        case 'h': outToken = '(H)'; changed=true; ruleKey='hSilent'; note='h is silent'; break;
+        case 'h': outToken = '(H)'; changed=true; ruleKey='hSilent'; note='The "h" is silent in French'; break;
         case 'i': case 'î': case 'ï': outToken = 'EE'; break;
         case 'j': outToken = 'ZH'; changed=true; ruleKey='jZH'; note='j → zh'; break;
         case 'k': outToken = 'K'; break;

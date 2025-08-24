@@ -12,7 +12,6 @@ import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loa
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from '../ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Checkbox } from '../ui/checkbox';
@@ -57,9 +56,9 @@ const TraceColors: Record<string, string> = {
 
 const getTraceColor = (trace: TokenTrace) => {
     if (!trace.changed) return TraceColors.charMap;
+    if (trace.out.startsWith('(')) return TraceColors.silent;
     if (trace.ruleKey?.includes('nas')) return TraceColors.nasal;
     if (trace.ruleKey?.includes('Glide') || trace.ruleKey?.includes('Est') || trace.ruleKey?.includes('Il') || trace.ruleKey?.includes('quK')) return TraceColors.special;
-    if (trace.ruleKey === 'finalDrop' || trace.ruleKey === 'septPdrop' || trace.ruleKey === 'hSilent') return TraceColors.silent;
     if (trace.ruleKey?.includes('eu') || trace.ruleKey?.includes('oi') || trace.ruleKey?.includes('eau')) return TraceColors.vowel;
     return TraceColors.default;
 }
@@ -69,7 +68,7 @@ const RenderTraceWithTooltips = ({ trace }: { trace: TokenTrace[] }) => {
     <>
       {trace.map((item, i) => {
         const isSilent = item.out.startsWith('(') && item.out.endsWith(')');
-        const enToken = isSilent ? item.out.slice(1, -1) : item.out;
+        const enToken = isSilent ? toEN(item.out.slice(1, -1)) : toEN(item.out);
 
         return (
           <TooltipProvider key={`trace-${i}`}>
@@ -82,7 +81,7 @@ const RenderTraceWithTooltips = ({ trace }: { trace: TokenTrace[] }) => {
               {item.changed && 
                 <TooltipContent>
                   <p className="font-mono text-sm">
-                    <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{item.out}</span>
+                    <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{toEN(item.out)}</span>
                   </p>
                   {item.note && <p className="text-sm text-muted-foreground">{item.note}</p>}
                 </TooltipContent>
