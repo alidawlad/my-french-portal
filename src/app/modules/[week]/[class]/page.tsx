@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BookMarked, Layers } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
-export default async function DynamicModulePage({ params }: { params: { week: string, class: string } }) {
-    const { week, class: classNum } = params;
+export default async function DynamicModulePage({ params }: { params: Promise<{ week: string, class: string }> }) {
+    const { week, class: classNum } = await params;
 
     const weekMatch = week.match(/^week-(\d+)$/);
     const classMatch = classNum.match(/^class-(\d+)$/);

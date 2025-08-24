@@ -89,14 +89,49 @@ export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'times
 }
 
 
+// Helper function to convert any timestamp format to ISO string
+function convertTimestampToISOString(timestamp: any): string {
+    try {
+        // Check for Firebase Timestamp with seconds property
+        if (timestamp && typeof timestamp === 'object' && typeof timestamp.seconds === 'number') {
+            const nanoseconds = timestamp.nanoseconds || 0;
+            return new Date(timestamp.seconds * 1000 + Math.floor(nanoseconds / 1000000)).toISOString();
+        }
+        
+        // Check for Firebase Timestamp with toDate method
+        if (timestamp && typeof timestamp.toDate === 'function') {
+            return timestamp.toDate().toISOString();
+        }
+        
+        // Check for regular Date object
+        if (timestamp instanceof Date) {
+            return timestamp.toISOString();
+        }
+        
+        // Check for ISO string
+        if (typeof timestamp === 'string') {
+            return new Date(timestamp).toISOString();
+        }
+        
+        // Fallback to current date
+        return new Date().toISOString();
+    } catch (error) {
+        console.error("Error converting timestamp:", timestamp, error);
+        return new Date().toISOString();
+    }
+}
+
 export async function getRuleBookWords(): Promise<SavedWord[]> {
     try {
         const q = query(collection(db, "rulebook"), orderBy("timestamp", "desc"));
         const querySnapshot = await getDocs(q);
         const words: SavedWord[] = [];
         querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const date = data.timestamp?.toDate ? data.timestamp.toDate() : new Date();
+            // Force serialize Firebase document data to convert all special objects to plain objects
+            const data = JSON.parse(JSON.stringify(doc.data()));
+            
+            // Convert timestamp to ISO string using helper function
+            const timestampISO = convertTimestampToISOString(data.timestamp);
             
             words.push({
                 id: doc.id,
@@ -107,7 +142,7 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
                 analysis: data.analysis || {},
                 audio_data_uri: data.audio_data_uri || null,
                 tags: data.tags || [],
-                timestamp: date.toISOString(), // Use serializable ISO string
+                timestamp: timestampISO, // Always a serializable ISO string
             });
         });
         return words;
