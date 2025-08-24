@@ -39,7 +39,7 @@ const getTraceColor = (trace: TokenTrace) => {
     return TraceColors.default;
 }
 
-export function AliRespeakerClient() {
+export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] }) {
   const [text, setText] = useState("un deux trois quatre cinq six sept huit neuf dix");
   const [showArabic, setShowArabic] = useState(false);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
@@ -175,6 +175,7 @@ export function AliRespeakerClient() {
           lines={{ en: enTrace.map(t => typeof t === 'string' ? t : toEN(t.out)).join(''), ar: arLine }}
           showArabic={showArabic}
           enLineTraceComponent={renderEnLineWithTrace(enTrace)}
+          moduleTags={moduleTags}
         />
       </main>
     </>

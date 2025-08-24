@@ -25,6 +25,7 @@ type InputSectionProps = {
   lines: { en: string; ar: string };
   showArabic: boolean;
   enLineTraceComponent: React.ReactNode;
+  moduleTags?: string[];
 };
 
 const UnderlineColors: Record<RuleCategory, string> = {
@@ -47,6 +48,7 @@ export function InputSection({
   lines,
   showArabic,
   enLineTraceComponent,
+  moduleTags = [],
 }: InputSectionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -150,8 +152,8 @@ export function InputSection({
 
   const handleSave = async () => {
     setIsSaving(true);
-    const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
-    tagArray.push('pronunciation'); // Auto-tag with the module name
+    const userTags = tags.split(',').map(t => t.trim()).filter(Boolean);
+    const finalTags = [...new Set([...userTags, ...moduleTags])]; // Combine and remove duplicates
     
     try {
         await saveWordToRuleBook({
@@ -160,7 +162,7 @@ export function InputSection({
             ali_respell: lines.en,
             analysis,
             audio_data_uri: audioData,
-            tags: tagArray,
+            tags: finalTags,
         });
 
         toast({

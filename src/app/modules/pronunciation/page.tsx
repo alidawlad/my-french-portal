@@ -10,6 +10,10 @@ import { BookMarked, Layers } from 'lucide-react';
 export default async function PronunciationModulePage() {
     const savedWords = await getRuleBookWords();
 
+    // In a real app, you'd fetch module-specific words.
+    // For now, we filter for words that have the 'pronunciation' tag.
+    const moduleWords = savedWords.filter(word => word.tags.includes('pronunciation'));
+
     return (
         <div className="space-y-8">
             <div>
@@ -19,7 +23,7 @@ export default async function PronunciationModulePage() {
                 </h1>
                 <p className="text-muted-foreground">The lab for analyzing and perfecting French pronunciation.</p>
             </div>
-            <AliRespeakerClient />
+            <AliRespeakerClient moduleTags={['pronunciation']} />
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline text-lg flex items-center gap-2">
@@ -31,7 +35,7 @@ export default async function PronunciationModulePage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <RuleBook savedWords={savedWords} onDeleteWord={deleteWordFromRuleBook} onUpdateWord={updateWordAnalysis} />
+                    <RuleBook savedWords={moduleWords} onDeleteWord={deleteWordFromRuleBook} onUpdateWord={updateWordAnalysis} />
                 </CardContent>
             </Card>
         </div>

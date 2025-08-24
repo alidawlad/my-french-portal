@@ -43,9 +43,9 @@ export default function RootLayout({
                    </Link>
                 </SidebarItem>
                  <SidebarItem>
-                   <Link href="/modules/pronunciation" className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50">
+                   <Link href="/modules" className="flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50">
                     <Layers />
-                    <span className="group-data-[collapsible=icon]:hidden">Pronunciation</span>
+                    <span className="group-data-[collapsible=icon]:hidden">Modules</span>
                    </Link>
                 </SidebarItem>
                  <SidebarItem>
