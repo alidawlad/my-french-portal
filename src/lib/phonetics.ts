@@ -89,14 +89,14 @@ export const SEP_MAP: Record<SepKind, string> = { hyphen: "\u2011", middot: "·"
 const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l'];
 const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'anaïs', 'reims', 'six', 'dix', 'cinq']);
 const NUMBER_EXCEPTIONS: Record<string, TokenTrace[]> = {
-    'un':     [{ src: 'un', out: 'UH~', changed: true, ruleKey: 'nasUN', note: 'un → un (nasal)'}],
+    'un':     [{ src: 'un', out: 'UH~', changed: true, ruleKey: 'nasUN', note: 'un → nasal /œ̃/'}],
     'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö' }],
     'trois':  [{ src: 't', out: 'T'}, { src: 'r', out: 'R'}, { src: 'oi', out: 'WA', changed: true, ruleKey: 'oi', note: 'oi → wa'}, {src: 's', out: '(S)', changed: true, ruleKey: 'finalDrop', note: 'Silent final s'}],
     'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalDrop', note: 'Silent final e'}],
-    'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'softC', note: 'c before i → s'}, { src: 'inq', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'k', out: 'K'}],
+    'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'softC', note: 'c before i → s'}, { src: 'in', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'q', out: 'K'}],
     'six':    [{ src: 's', out: 'S'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
     'sept':   [{ src: 's', out: 'S'}, { src: 'e', out: 'EH'}, { src: 'p', out: '(P)', changed: true, ruleKey: 'septPdrop', note: 'p is silent in sept'}, { src: 't', out: 'T'}],
-    'huit':   [{ src: 'h', out: '(H)', changed: true, ruleKey: 'hSilent', note: 'h is silent'}, { src: 'ui', out: 'ÜEE', changed: true, ruleKey: 'uiGlide', note: 'ui → üee'}],
+    'huit':   [{ src: 'h', out: '(H)', changed: true, ruleKey: 'hSilent', note: 'h is silent'}, { src: 'ui', out: 'ÜEE', changed: true, ruleKey: 'uiGlide', note: 'ui → ü+ee'}, {src: 't', out: 'T'}],
     'neuf':   [{ src: 'n', out: 'N'}, { src: 'eu', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö'}, { src: 'f', out: 'F'}],
     'dix':    [{ src: 'd', out: 'D'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
 };
@@ -151,7 +151,6 @@ export const toEN = (t: Token): string => {
     case "AH": return "ah";
     case "AY": return "ay";
     case "EH": return "eh";
-    case "UH": return "uh";
     case "EE": return "ee";
     case "OH": return "oh";
     case "OO": return "oo";
@@ -208,7 +207,7 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
     return `{EH~:${p1}}`; // 'in', 'im', etc.
   });
   lw = lw.replace(/ien(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{Y:i}{EH~:en}");
-  lw = lw.replace(/ez(?=$|[^a-zàâäéèêëîïôöùûüœ])/gi, "{AY:ez}");
+  lw = lw.replace(/ez$/, "{AY:ez}");
 
 
   while(i < lw.length) {
@@ -315,6 +314,7 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
         case 'x': outToken = 'X'; break;
         case 'y': outToken = isVowel(lw[i+1] || '') ? 'Y' : 'EE'; break;
         case 'z': outToken = 'Z'; break;
+        case '’': case "'": case "-": case "–": case "—": i++; continue;
         default: outToken = char.toUpperCase();
     }
     
@@ -368,3 +368,5 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
+
+    
