@@ -1,3 +1,4 @@
+
 // src/components/workbench/input-section.tsx
 "use client";
 
@@ -8,13 +9,15 @@ import { type Rule, RULES, type RuleCategory, getRuleForWord } from "@/lib/phone
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
 import { Volume2, Loader2, Bookmark, Wand2, Sparkles, BrainCircuit, MessageSquareQuote, ListFilter } from 'lucide-react';
-import { getAudioForText, getDictionaryDefinitions, getRuleAssistantResponse } from '@/app/actions';
+import { getAudioForText, getDictionaryDefinitions, getRuleAssistantResponse, saveWordToRuleBook } from '@/app/actions';
 import type { RuleAssistantInput, RuleAssistantOutput } from '@/ai/flows/rule-assistant-flow';
 import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { AIAnalysis, SavedWord } from './rule-book';
+import { useRouter } from 'next/navigation';
+
 
 type InputSectionProps = {
   text: string;
@@ -45,7 +48,6 @@ export function InputSection({
   onTextChange,
   lines,
   showArabic,
-  onSaveWord,
   isSaving,
   enLineTraceComponent,
 }: InputSectionProps) {
@@ -56,6 +58,7 @@ export function InputSection({
   const [analysis, setAnalysis] = useState<AIAnalysis>({});
   const [audioData, setAudioData] = useState<string | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
   const gridCols = showArabic ? "grid-cols-3" : "grid-cols-2";
 
   const handlePlayAudio = async () => {
@@ -147,20 +150,40 @@ export function InputSection({
     })
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
-    onSaveWord({
-      fr_line: text,
-      en_line: userMeaning,
-      ali_respell: lines.en,
-      analysis,
-      audio_data_uri: audioData,
-      tags: tagArray,
-    });
-    setUserMeaning("");
-    setAnalysis({});
-    setAudioData(null);
-    setTags("");
+    
+    try {
+        await saveWordToRuleBook({
+            fr_line: text,
+            en_line: userMeaning,
+            ali_respell: lines.en,
+            analysis,
+            audio_data_uri: audioData,
+            tags: tagArray,
+        });
+
+        toast({
+            title: "Saved!",
+            description: `"${text}" has been added to your Rule Book.`,
+        });
+
+        // Reset state after saving
+        onTextChange("");
+        setUserMeaning("");
+        setAnalysis({});
+        setAudioData(null);
+        setTags("");
+        router.refresh(); // Refresh server components to show the new word in the list
+
+    } catch (error) {
+        console.error("Save Error:", error);
+        toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: "Could not save the word. Please check the console for details.",
+        });
+    }
   }
   
   const renderAiResponse = (response: RuleAssistantOutput | undefined) => {
@@ -312,5 +335,3 @@ export function InputSection({
     </Card>
   );
 }
-
-    
