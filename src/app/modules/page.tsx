@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Layers, PlusCircle, BookHead, Mic2 } from 'lucide-react';
+import { Layers, PlusCircle, BookMarked, Mic2 } from 'lucide-react';
 
 const modules = [
     {
@@ -16,7 +16,7 @@ const modules = [
         title: "Week 1 / Class 1",
         description: "Basics of greetings and articles.",
         href: "/modules/week-1/class-1",
-        icon: <BookHead className="w-6 h-6 text-primary" />,
+        icon: <BookMarked className="w-6 h-6 text-primary" />,
         tags: ["week:1", "class:1", "grammar"]
     }
 ]
