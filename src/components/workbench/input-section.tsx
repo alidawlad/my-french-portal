@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { type Rule, RULES, type RuleCategory, getRuleForWord, TokenTrace, toEN } from "@/lib/phonetics";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Button } from '@/components/ui/button';
-import { Volume2, Loader2, Bookmark, Wand2, Sparkles, BrainCircuit, MessageSquareQuote, ListFilter } from 'lucide-react';
+import { Volume2, Loader2, Bookmark, Wand2, Sparkles, BrainCircuit, MessageSquareQuote, ListFilter, ChevronDown } from 'lucide-react';
 import { getAudioForText, getDictionaryDefinitions, getRuleAssistantResponse, saveWordToRuleBook } from '@/app/actions';
 import type { RuleAssistantInput, RuleAssistantOutput } from '@/ai/flows/rule-assistant-flow';
 import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
@@ -16,6 +16,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import type { AIAnalysis, SavedWord } from './rule-book';
 import { useRouter } from 'next/navigation';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 
 
 type InputSectionProps = {
@@ -294,49 +295,57 @@ export function InputSection({
           )}
         </div>
         
-        <div className="pt-4 space-y-2">
-            <Label className="text-sm font-medium text-muted-foreground">AI Quick Analysis</Label>
-            <div className="flex flex-wrap gap-2">
-                 {actionChips.map(chip => (
-                    <Button 
-                        key={chip.type}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAiQuery(chip.type as any)}
-                        disabled={!!isLoading || !text.trim()}
-                    >
-                        {isLoading === chip.type ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <span className="mr-2">{chip.icon}</span>
-                        )}
-                        {chip.label}
-                    </Button>
-                ))}
-            </div>
-
-            {isLoading && !Object.values(analysis).some(v => v) && (
-              <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <p className="ml-2">AI is thinking...</p>
-              </div>
-            )}
-            
-            {analysis.definitions && (
-              <div className="space-y-2 mt-2 p-3 bg-background/50 rounded-lg border">
-                <div className="flex items-start gap-3">
-                  <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <div className="text-sm">
-                    {analysis.definitions.frenchDefinition && <p><strong className="font-medium text-foreground/90">FR:</strong> {analysis.definitions.frenchDefinition}</p>}
-                    {analysis.definitions.englishDefinition && <p><strong className="font-medium text-foreground/90">EN:</strong> {analysis.definitions.englishDefinition}</p>}
-                  </div>
+        <Collapsible defaultOpen={false} className="pt-4 space-y-2">
+            <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground w-full">
+                    <Label>AI Quick Analysis</Label>
+                    <ChevronDown className="h-4 w-4 transition-transform [&[data-state=open]]:rotate-180" />
+                    <div className="flex-grow border-b border-dashed"></div>
+                </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-2 pt-2">
+                <div className="flex flex-wrap gap-2">
+                     {actionChips.map(chip => (
+                        <Button 
+                            key={chip.type}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAiQuery(chip.type as any)}
+                            disabled={!!isLoading || !text.trim()}
+                        >
+                            {isLoading === chip.type ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <span className="mr-2">{chip.icon}</span>
+                            )}
+                            {chip.label}
+                        </Button>
+                    ))}
                 </div>
-              </div>
-            )}
-            {renderAiResponse(analysis.explain_phonetics)}
-            {renderAiResponse(analysis.explain_grammar)}
-            {renderAiResponse(analysis.find_similar)}
-        </div>
+
+                {isLoading && !Object.values(analysis).some(v => v) && (
+                  <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <p className="ml-2">AI is thinking...</p>
+                  </div>
+                )}
+                
+                {analysis.definitions && (
+                  <div className="space-y-2 mt-2 p-3 bg-background/50 rounded-lg border">
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="text-sm">
+                        {analysis.definitions.frenchDefinition && <p><strong className="font-medium text-foreground/90">FR:</strong> {analysis.definitions.frenchDefinition}</p>}
+                        {analysis.definitions.englishDefinition && <p><strong className="font-medium text-foreground/90">EN:</strong> {analysis.definitions.englishDefinition}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {renderAiResponse(analysis.explain_phonetics)}
+                {renderAiResponse(analysis.explain_grammar)}
+                {renderAiResponse(analysis.find_similar)}
+            </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );

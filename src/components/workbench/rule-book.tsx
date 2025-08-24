@@ -199,33 +199,23 @@ export function RuleBook({ savedWords, onDeleteWord, onUpdateWord }: RuleBookPro
   return (
     <div className="space-y-4">
         <RuleBookToolbar onFilterChange={setFilters} allTags={allTags} />
-        <Card>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-8"></TableHead>
-                        <TableHead>French & Meaning</TableHead>
-                        <TableHead>Ali Respell</TableHead>
-                        <TableHead className="hidden md:table-cell">Tags</TableHead>
-                        <TableHead className="hidden lg:table-cell text-right">Added</TableHead>
-                        <TableHead className="text-right w-12"></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filteredWords.length > 0 ? (
-                        filteredWords.map((word) => (
-                            <SavedWordTableRow key={word.id} word={word} onDeleteWord={onDeleteWord} onUpdateWord={onUpdateWord} />
-                        ))
-                    ) : (
-                         <TableRow>
-                            <TableCell colSpan={6} className="h-24 text-center">
-                                No words found. Try adjusting your filters.
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
-        </Card>
+         {filteredWords.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredWords.map((word) => (
+                    <SavedWordCard key={word.id} word={word} onDeleteWord={onDeleteWord} onUpdateWord={onUpdateWord} />
+                ))}
+            </div>
+         ) : (
+            <div className="text-center py-8 border rounded-lg border-dashed">
+                <Search className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <p className="mt-4 text-sm text-muted-foreground">
+                   No words found for your search.
+                </p>
+                <p className="text-xs text-muted-foreground/80">
+                  Try adjusting your search term or filters.
+                </p>
+            </div>
+         )}
     </div>
   );
 }
@@ -234,20 +224,27 @@ const ClientRelativeTime = ({ date }: { date: Date }) => {
     const [relativeTime, setRelativeTime] = useState('');
 
     useEffect(() => {
-        // This effect runs only on the client, after hydration
         setRelativeTime(formatDistanceToNow(date, { addSuffix: true }));
     }, [date]);
 
-    // Render nothing on the server and during initial client render to avoid mismatch
     if (!relativeTime) {
-        return null;
+        return null; // Avoid hydration mismatch
     }
 
-    return <>{relativeTime}</>;
+    return (
+        <TooltipProvider>
+            <Tooltip delayDuration={100}>
+                <TooltipTrigger>{relativeTime}</TooltipTrigger>
+                <TooltipContent>
+                    <p>{format(date, 'PPP p')}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
 };
 
 
-function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void }) {
+function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -358,62 +355,64 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
   const wordTimestamp = new Date(word.timestamp);
 
   return (
-    <>
-        <TableRow onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
-            <TableCell>
-                 <Button variant="ghost" size="icon" className="h-8 w-8">
-                    {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                </Button>
-            </TableCell>
-            <TableCell>
-                <div className="font-medium flex items-center gap-2">
-                    {word.fr_line}
-                     <Button variant="ghost" size="icon" onClick={handlePlayAudio} disabled={isPlaying} className="h-7 w-7 text-muted-foreground opacity-50 hover:opacity-100">
-                        {isPlaying ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4"/>}
-                    </Button>
-                </div>
-                <div className="text-sm text-muted-foreground">{word.en_line}</div>
-            </TableCell>
-            <TableCell>
-                <span className="font-mono text-sm tracking-wide text-muted-foreground">
-                    {word.ali_respell_trace ? <RenderTraceWithTooltips trace={word.ali_respell_trace} /> : word.ali_respell}
-                </span>
-            </TableCell>
-            <TableCell className="hidden md:table-cell">
-                <div className="flex flex-wrap gap-1">
-                    {word.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-                </div>
-            </TableCell>
-             <TableCell className="hidden lg:table-cell text-right text-muted-foreground text-sm">
-                 <ClientRelativeTime date={wordTimestamp} />
-            </TableCell>
-            <TableCell className="text-right">
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-8 w-8" disabled={isDeleting} onClick={(e) => e.stopPropagation()}>
-                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <Card>
+            <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center justify-between">
+                    <span>{word.fr_line}</span>
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={handlePlayAudio} disabled={isPlaying} className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                            {isPlaying ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4"/>}
                         </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-                                Yes, delete it
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </TableCell>
-        </TableRow>
-        {isOpen && (
-            <TableRow>
-                <TableCell colSpan={6}>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-7 w-7" disabled={isDeleting} onClick={(e) => e.stopPropagation()}>
+                                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                                        Yes, delete it
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </CardTitle>
+                <CardDescription>{word.en_line || 'No English meaning provided.'}</CardDescription>
+            </CardHeader>
+             <CardContent className="space-y-3 pb-4">
+                <div>
+                     <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">Ali Respell</div>
+                     <p className="font-mono text-sm tracking-wide text-muted-foreground">
+                        {word.ali_respell_trace ? <RenderTraceWithTooltips trace={word.ali_respell_trace} /> : word.ali_respell}
+                    </p>
+                </div>
+                {word.tags.length > 0 && (
+                    <div>
+                         <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">Tags</div>
+                         <div className="flex flex-wrap gap-1">
+                            {word.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                        </div>
+                    </div>
+                )}
+             </CardContent>
+             <CardFooter className="flex-col items-start gap-2">
+                 <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="-ml-3 h-8 text-muted-foreground">
+                        {isOpen ? <ChevronDown className="mr-2 h-4 w-4" /> : <ChevronRight className="mr-2 h-4 w-4" />}
+                        AI Coach
+                    </Button>
+                </CollapsibleTrigger>
+                 <CollapsibleContent className="w-full">
                     <div className="p-4 bg-muted/30 rounded-md space-y-4">
                         <div className="font-semibold text-sm">AI Coach</div>
                          {analysis.definitions && (
@@ -450,9 +449,9 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
                         {renderResponse(analysis.explain_grammar)}
                         {renderResponse(analysis.find_similar)}
                     </div>
-                </TableCell>
-            </TableRow>
-        )}
-    </>
+                 </CollapsibleContent>
+             </CardFooter>
+        </Card>
+    </Collapsible>
   );
 }

@@ -24,7 +24,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Literata:opsz,wght@24..144,400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-         <SidebarProvider defaultOpen={true}>
+         <SidebarProvider defaultOpen={false}>
           <Sidebar>
             <SidebarHeader>
               <div className="flex items-center gap-2">
