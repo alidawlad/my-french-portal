@@ -36,7 +36,7 @@ export type SavedWord = {
   analysis: AIAnalysis;
   audio_data_uri: string | null; // Base64 encoded audio data
   tags: string[];
-  timestamp: Date;
+  timestamp: string; // Serialized as ISO string
 };
 
 type RuleBookProps = {
@@ -231,12 +231,17 @@ export function RuleBook({ savedWords, onDeleteWord, onUpdateWord }: RuleBookPro
 }
 
 const ClientRelativeTime = ({ date }: { date: Date }) => {
-    const [relativeTime, setRelativeTime] = useState(() => format(date, 'PPpp')); // Default static format
+    const [relativeTime, setRelativeTime] = useState('');
 
     useEffect(() => {
         // This effect runs only on the client, after hydration
         setRelativeTime(formatDistanceToNow(date, { addSuffix: true }));
     }, [date]);
+
+    // Render nothing on the server and during initial client render to avoid mismatch
+    if (!relativeTime) {
+        return null;
+    }
 
     return <>{relativeTime}</>;
 };
