@@ -30,7 +30,7 @@ export const LETTERS: Array<{ ch: string; nameIPA: string; ali: string; alt?: st
   { ch: "O", nameIPA: "[o]", ali: "oh" },
   { ch: "P", nameIPA: "[pe]", ali: "peh", alt: "pé", note: "Avoid 'pee' (that's /piː/)." },
   { ch: "Q", nameIPA: "[ky]", ali: "kü", alt: "kyü", note: "k + front-rounded /y/ (round lips)." },
-  { ch: "R", nameIPA: "[ɛʁ]", ali: "ghr", note: "Uvular; think Arabic غ (ghayn)." },
+  { ch: "R", nameIPA: "[ɛʁ]", ali: "kh(r)", note: "Uvular; like a throaty 'kh' sound." },
   { ch: "S", nameIPA: "[ɛs]", ali: "ehs", alt: "ès" },
   { ch: "T", nameIPA: "[te]", ali: "teh", alt: "té", note: "Avoid 'tee'." },
   { ch: "U", nameIPA: "[y]", ali: "ü", alt: "uu", note: "Front-rounded vowel (not 'oo')." },
@@ -163,7 +163,7 @@ export const toEN = (t: Token): string => {
     case "ZH": return "zh";
     case "NY": return "ny";
     case "Y": return "y";
-    case "R": return "ghr";
+    case "R": return "kh(r)";
     case "AH~": return "ah(n)";
     case "OH~": return "oh(n)";
     case "EH~": return "eh(n)";
@@ -365,4 +365,5 @@ export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
 
     
+
 
