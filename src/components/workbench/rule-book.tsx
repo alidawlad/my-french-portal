@@ -8,7 +8,7 @@ import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis,
 import type { RuleAssistantOutput } from "@/ai/flows/rule-assistant-flow";
 import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from "@/hooks/use-toast";
-import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, BookOpen, Volume2, Tag, Search, RefreshCw, X } from "lucide-react";
+import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, BookOpen, Volume2, Tag, Search, RefreshCw, X, Grid, List } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
@@ -19,6 +19,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { TokenTrace, toEN } from '@/lib/phonetics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Label } from '../ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn } from '@/lib/utils';
 
 
 export type AIAnalysis = {
@@ -61,6 +63,7 @@ const getTraceColor = (trace: TokenTrace) => {
     if (trace.out.startsWith('(')) return TraceColors.silent;
     if (trace.ruleKey?.includes('nas')) return TraceColors.nasal;
     if (trace.ruleKey?.includes('Glide') || trace.ruleKey?.includes('Est') || trace.ruleKey?.includes('Il') || trace.ruleKey?.includes('quK')) return TraceColors.special;
+    if (trace.ruleKey === 'finalDrop' || trace.ruleKey === 'septPdrop' || trace.ruleKey === 'hSilent') return TraceColors.silent;
     if (trace.ruleKey?.includes('eu') || trace.ruleKey?.includes('oi') || trace.ruleKey?.includes('eau')) return TraceColors.vowel;
     return TraceColors.default;
 }
@@ -82,10 +85,10 @@ const RenderTraceWithTooltips = ({ trace }: { trace: TokenTrace[] }) => {
               </TooltipTrigger>
               {item.changed && 
                 <TooltipContent>
-                  <p className="font-mono text-sm">
+                  <div className="font-mono text-sm">
                     <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{toEN(item.out)}</span>
-                  </p>
-                  {item.note && <p className="text-sm text-muted-foreground">{item.note}</p>}
+                  </div>
+                  {item.note && <div className="text-sm text-muted-foreground">{item.note}</div>}
                 </TooltipContent>
               }
             </Tooltip>
@@ -99,7 +102,17 @@ const RenderTraceWithTooltips = ({ trace }: { trace: TokenTrace[] }) => {
 };
 
 
-function RuleBookToolbar({ onFilterChange, allTags }: { onFilterChange: (filters: { searchTerm: string, selectedTags: string[] }) => void, allTags: string[] }) {
+function RuleBookToolbar({ 
+    onFilterChange, 
+    allTags,
+    view,
+    onViewChange
+}: { 
+    onFilterChange: (filters: { searchTerm: string, selectedTags: string[] }) => void, 
+    allTags: string[],
+    view: 'grid' | 'list',
+    onViewChange: (view: 'grid' | 'list') => void
+}) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -128,42 +141,53 @@ function RuleBookToolbar({ onFilterChange, allTags }: { onFilterChange: (filters
                     className="pl-10"
                 />
             </div>
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="outline" className="flex-shrink-0">
-                        <ListFilter className="mr-2 h-4 w-4" />
-                        Filter by Tag
-                        {selectedTags.length > 0 && <span className="ml-2 rounded-full bg-primary text-primary-foreground px-2 py-0.5 text-xs">{selectedTags.length}</span>}
+            <div className="flex items-center gap-2">
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="flex-shrink-0">
+                            <ListFilter className="mr-2 h-4 w-4" />
+                            Filter by Tag
+                            {selectedTags.length > 0 && <span className="ml-2 rounded-full bg-primary text-primary-foreground px-2 py-0.5 text-xs">{selectedTags.length}</span>}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0">
+                       <div className="p-4 space-y-2">
+                           <h4 className="font-medium text-sm">Filter by Tags</h4>
+                           {allTags.length > 0 ? (
+                               allTags.map(tag => (
+                                   <div key={tag} className="flex items-center space-x-2">
+                                       <Checkbox
+                                           id={`tag-${tag}`}
+                                           checked={selectedTags.includes(tag)}
+                                           onCheckedChange={() => handleTagChange(tag)}
+                                       />
+                                       <label htmlFor={`tag-${tag}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                           {tag}
+                                       </label>
+                                   </div>
+                               ))
+                           ) : (
+                               <p className="text-sm text-muted-foreground">No tags available.</p>
+                           )}
+                       </div>
+                    </PopoverContent>
+                </Popover>
+                <div className="flex items-center rounded-md border bg-background/50 p-0.5">
+                    <Button variant={view === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => onViewChange('grid')} className="h-8 w-8">
+                        <Grid className="h-4 w-4" />
                     </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-0">
-                   <div className="p-4 space-y-2">
-                       <h4 className="font-medium text-sm">Filter by Tags</h4>
-                       {allTags.length > 0 ? (
-                           allTags.map(tag => (
-                               <div key={tag} className="flex items-center space-x-2">
-                                   <Checkbox
-                                       id={`tag-${tag}`}
-                                       checked={selectedTags.includes(tag)}
-                                       onCheckedChange={() => handleTagChange(tag)}
-                                   />
-                                   <label htmlFor={`tag-${tag}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                       {tag}
-                                   </label>
-                               </div>
-                           ))
-                       ) : (
-                           <p className="text-sm text-muted-foreground">No tags available.</p>
-                       )}
-                   </div>
-                </PopoverContent>
-            </Popover>
+                    <Button variant={view === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => onViewChange('list')} className="h-8 w-8">
+                        <List className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 }
 
 export function RuleBook({ savedWords, onDeleteWord, onUpdateWord }: RuleBookProps) {
     const [filters, setFilters] = useState({ searchTerm: '', selectedTags: [] as string[] });
+    const [view, setView] = useState<'grid' | 'list'>('grid');
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
@@ -201,13 +225,34 @@ export function RuleBook({ savedWords, onDeleteWord, onUpdateWord }: RuleBookPro
 
   return (
     <div className="space-y-4">
-        <RuleBookToolbar onFilterChange={setFilters} allTags={allTags} />
+        <RuleBookToolbar onFilterChange={setFilters} allTags={allTags} view={view} onViewChange={setView} />
          {filteredWords.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredWords.map((word) => (
-                    <SavedWordCard key={word.id} word={word} onDeleteWord={onDeleteWord} onUpdateWord={onUpdateWord} />
-                ))}
-            </div>
+            view === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredWords.map((word) => (
+                        <SavedWordCard key={word.id} word={word} onDeleteWord={onDeleteWord} onUpdateWord={onUpdateWord} />
+                    ))}
+                </div>
+            ) : (
+                <Card>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Phrase</TableHead>
+                                <TableHead className="hidden sm:table-cell">Phonetics</TableHead>
+                                <TableHead className="hidden md:table-cell">Tags</TableHead>
+                                <TableHead className="hidden lg:table-cell">Added</TableHead>
+                                <TableHead><span className="sr-only">Actions</span></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredWords.map((word) => (
+                                <SavedWordTableRow key={word.id} word={word} onDeleteWord={onDeleteWord} onUpdateWord={onUpdateWord} />
+                            ))}
+                        </TableBody>
+                    </Table>
+                </Card>
+            )
          ) : (
             <div className="text-center py-8 border rounded-lg border-dashed">
                 <Search className="mx-auto h-12 w-12 text-muted-foreground/50" />
@@ -293,6 +338,105 @@ function EditTagsPopover({ word, onUpdateWord, children }: { word: SavedWord; on
             </PopoverContent>
         </Popover>
     );
+}
+
+function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void }) {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const { toast } = useToast();
+    const wordTimestamp = new Date(word.timestamp);
+
+    const handlePlayAudio = async (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent row from toggling
+        setIsPlaying(true);
+        let audioDataUri = word.audio_data_uri;
+        
+        try {
+          if (!audioDataUri) {
+            toast({ title: "Generating Audio...", description: "This may take a moment." });
+            const { audio } = await getAudioForText(word.fr_line);
+            audioDataUri = audio;
+            if (audioDataUri) {
+              await updateWordAnalysis(word.id, { audio_data_uri: audioDataUri });
+              onUpdateWord(word.id, { ...word, audio_data_uri: audioDataUri });
+            }
+          }
+    
+          if (audioDataUri) {
+            const audio = new Audio(audioDataUri);
+            audio.play();
+            audio.onended = () => setIsPlaying(false);
+            audio.onerror = () => {
+              toast({ variant: "destructive", title: "Error", description: "Could not play audio."});
+              setIsPlaying(false);
+            }
+          } else {
+            toast({ variant: "destructive", title: "Audio Failed", description: "Could not generate or play audio."});
+            setIsPlaying(false);
+          }
+        } catch (error) {
+          console.error(error);
+          toast({ variant: "destructive", title: "Audio Error", description: "An unexpected error occurred." });
+          setIsPlaying(false);
+        }
+    };
+    
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsDeleting(true);
+        await onDeleteWord(word.id);
+    };
+
+    return (
+        <TableRow>
+            <TableCell>
+                <div className="font-medium text-base">{word.fr_line}</div>
+                <div className="text-sm text-muted-foreground">{word.en_line}</div>
+            </TableCell>
+             <TableCell className="hidden sm:table-cell">
+                <div className="font-mono text-sm tracking-wide text-muted-foreground">
+                    {word.ali_respell_trace ? <RenderTraceWithTooltips trace={word.ali_respell_trace} /> : word.ali_respell}
+                </div>
+             </TableCell>
+            <TableCell className="hidden md:table-cell">
+                <div className="flex flex-wrap gap-1">
+                    {word.tags.slice(0, 2).map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                    {word.tags.length > 2 && <Badge variant="outline">+{word.tags.length - 2}</Badge>}
+                </div>
+            </TableCell>
+             <TableCell className="hidden lg:table-cell text-right text-muted-foreground text-sm">
+                 <ClientRelativeTime date={wordTimestamp} />
+            </TableCell>
+            <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={handlePlayAudio} disabled={isPlaying} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        {isPlaying ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4"/>}
+                    </Button>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-8 w-8" disabled={isDeleting} onClick={(e) => e.stopPropagation()}>
+                                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently delete "{word.fr_line}" from your saved words. This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                                    Yes, delete it
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </TableCell>
+        </TableRow>
+    )
 }
 
 function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void }) {
@@ -489,8 +633,8 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
                             <div>
                                 <Badge variant="outline">Dictionary</Badge>
                                 <div className="text-sm space-y-1 text-foreground/80 mt-1 p-3 bg-background/50 rounded-lg border">
-                                    {analysis.definitions.englishDefinition && <p><strong className="font-medium text-foreground/90">EN:</strong> {analysis.definitions.englishDefinition}</p>}
-                                    {analysis.definitions.frenchDefinition && <p><strong className="font-medium text-foreground/90">FR:</strong> {analysis.definitions.frenchDefinition}</p>}
+                                    {analysis.definitions.englishDefinition && <div><strong className="font-medium text-foreground/90">EN:</strong> {analysis.definitions.englishDefinition}</div>}
+                                    {analysis.definitions.frenchDefinition && <div><strong className="font-medium text-foreground/90">FR:</strong> {analysis.definitions.frenchDefinition}</div>}
                                 </div>
                             </div>
                         )}
