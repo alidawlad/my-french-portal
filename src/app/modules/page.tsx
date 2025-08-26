@@ -33,7 +33,7 @@ export default async function ModulesPage() {
 
     savedWords.forEach(word => {
         const weekTag = word.tags.find(t => t.startsWith('week:'));
-        const classTag = word.tags.fincd(t => t.startsWith('class:'));
+        const classTag = word.tags.find(t => t.startsWith('class:'));
         
         if (weekTag && classTag) {
             const week = weekTag.split(':')[1];
