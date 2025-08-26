@@ -2,10 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Layers, PlusCircle, BookMarked, Mic2 } from 'lucide-react';
+import { Layers, PlusCircle, BookMarked, Mic2, FileText, BookCopy } from 'lucide-react';
 import { getRuleBookWords } from '@/app/actions';
+import { Badge } from '@/components/ui/badge';
 
 type Module = {
+    key: string;
     title: string;
     description: string;
     href: string;
@@ -18,6 +20,7 @@ export default async function ModulesPage() {
 
     const staticModules: Module[] = [
         {
+            key: "pronunciation",
             title: "Pronunciation",
             description: "The original Ali-Respell workbench for phonetic analysis.",
             href: "/modules/pronunciation",
@@ -30,8 +33,8 @@ export default async function ModulesPage() {
 
     savedWords.forEach(word => {
         const weekTag = word.tags.find(t => t.startsWith('week:'));
-        const classTag = word.tags.find(t => t.startsWith('class:'));
-
+        const classTag = word.tags.fincd(t => t.startsWith('class:'));
+        
         if (weekTag && classTag) {
             const week = weekTag.split(':')[1];
             const classNum = classTag.split(':')[1];
@@ -39,11 +42,35 @@ export default async function ModulesPage() {
             
             if (!dynamicModules.has(key)) {
                 dynamicModules.set(key, {
+                    key,
                     title: `Week ${week} / Class ${classNum}`,
-                    description: `Workbench for Week ${week}, Class ${classNum}.`,
+                    description: `Workbench for your tutor session.`,
                     href: `/modules/week-${week}/class-${classNum}`,
                     icon: <BookMarked className="w-6 h-6 text-primary" />,
                     tags: [`week:${week}`, `class:${classNum}`]
+                });
+            }
+        }
+        
+        const partTag = word.tags.find(t => t.startsWith('part:'));
+        const unitTag = word.tags.find(t => t.startsWith('unit:'));
+        const lessonTag = word.tags.find(t => t.startsWith('lesson:'));
+
+        if (partTag && unitTag && lessonTag) {
+            const part = partTag.split(':')[1];
+            const unit = unitTag.split(':')[1];
+            const lesson = lessonTag.split(':')[1];
+            const key = `part-${part}/unit-${unit}/lesson-${lesson}`;
+
+            if (!dynamicModules.has(key)) {
+                 const lessonLabel = lesson.replace(/-/g, ' ');
+                dynamicModules.set(key, {
+                    key,
+                    title: `P${part} U${unit}: ${lessonLabel}`,
+                    description: `Workbench for your Speak app lesson.`,
+                    href: `/modules/part-${part}/unit-${unit}/lesson-${lesson}`,
+                    icon: <BookCopy className="w-6 h-6 text-primary" />,
+                    tags: [`part:${part}`, `unit:${unit}`, `lesson:${lesson}`]
                 });
             }
         }
@@ -71,13 +98,13 @@ export default async function ModulesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {allModules.map(module => (
-                    <Link href={module.href} key={module.title} className="block hover:translate-y-[-2px] transition-transform">
+                    <Link href={module.href} key={module.key} className="block hover:translate-y-[-2px] transition-transform">
                         <Card className="h-full flex flex-col">
                             <CardHeader>
                                 <div className="flex items-start gap-4">
                                     {module.icon}
                                     <div>
-                                        <CardTitle className="font-headline text-lg">{module.title}</CardTitle>
+                                        <CardTitle className="font-headline text-lg capitalize">{module.title}</CardTitle>
                                         <CardDescription className="mt-1">{module.description}</CardDescription>
                                     </div>
                                 </div>
@@ -85,7 +112,7 @@ export default async function ModulesPage() {
                             <CardContent className="flex-grow flex items-end">
                                 <div className="flex flex-wrap gap-1">
                                     {module.tags.map(tag => (
-                                        <span key={tag} className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">{tag}</span>
+                                        <Badge key={tag} variant="secondary" className="capitalize">{tag.replace(':',': ')}</Badge>
                                     ))}
                                 </div>
                             </CardContent>
