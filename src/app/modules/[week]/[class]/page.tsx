@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BookMarked, Layers } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
-// Generic Page to handle all dynamic module structures
+// This is now the generic page to handle all dynamic module structures.
+// The folder name `[week]/[class]` is kept for historical reasons, but it now uses a catch-all `...path` param.
 export default async function DynamicModulePage({ params }: { params: { path: string[] } }) {
     const path = params.path || [];
 

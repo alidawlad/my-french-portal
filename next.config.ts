@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -18,21 +19,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  // This rewrites rule is a workaround to map dynamic routes to a single page component
-  // It allows for flexible module structures like /week-1/class-1 or /part-1/unit-2/lesson-drill
-  // without needing separate page files for each structure.
-  async rewrites() {
-    return [
-      {
-        source: '/modules/week-:week/class-:class',
-        destination: '/modules/[...path]',
-      },
-      {
-        source: '/modules/part-:part/unit-:unit/lesson-:lesson',
-        destination: '/modules/[...path]',
-      },
-    ]
   },
 };
 
