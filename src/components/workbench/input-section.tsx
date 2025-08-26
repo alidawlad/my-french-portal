@@ -61,7 +61,6 @@ export function InputSection({
   const [audioData, setAudioData] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const gridCols = showArabic ? "grid-cols-3" : "grid-cols-2";
 
   const handlePlayAudio = async () => {
     if (!text.trim()) return;
@@ -271,7 +270,7 @@ export function InputSection({
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bookmark className="mr-2 h-4 w-4" />}
             {isSaving ? "Saving..." : "Save to Rule Book"}
         </Button>
-        <div className={`grid gap-4 ${gridCols} pt-4`}>
+        <div className="grid gap-4 grid-cols-2 pt-4">
           <div className="rounded-lg border p-3 bg-background/50">
             <div className="text-xs font-semibold uppercase text-muted-foreground mb-1 flex justify-between items-center">
                 <span>FR-line (original)</span>
@@ -287,12 +286,6 @@ export function InputSection({
             <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">EN-line (Ali respell)</div>
             <div className="min-h-[40px] whitespace-pre-wrap break-words text-lg tracking-wide font-medium">{enLineTraceComponent}</div>
           </div>
-          {showArabic && (
-            <div className="rounded-lg border p-3 bg-background/50">
-              <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">AR-line (approx.)</div>
-              <div dir="rtl" className="min-h-[40px] whitespace-pre-wrap break-words text-xl text-right font-medium">{lines.ar}</div>
-            </div>
-          )}
         </div>
         
         <Collapsible defaultOpen={false} className="pt-4 space-y-2">

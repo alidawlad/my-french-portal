@@ -6,7 +6,6 @@ import {
   SepKind,
   transformWordWithTrace,
   joinTokens,
-  toArabic,
   toEN,
   SEP_MAP,
   type TokenTrace,
@@ -33,20 +32,18 @@ const getTraceColor = (trace: TokenTrace) => {
     if (!trace.changed) return TraceColors.charMap;
     if (trace.ruleKey?.includes('nas')) return TraceColors.nasal;
     if (trace.ruleKey?.includes('Glide') || trace.ruleKey?.includes('Est') || trace.ruleKey?.includes('Il') || trace.ruleKey?.includes('quK')) return TraceColors.special;
-    if (trace.ruleKey === 'finalDrop' || trace.ruleKey === 'septPdrop' || trace.ruleKey === 'hSilent') return TraceColors.silent;
+    if (trace.ruleKey === 'finalDrop' || trace.ruleKey === 'septPdrop' || trace.ruleKey === 'hSilent' || trace.ruleKey === 'finalSchwaDrop') return TraceColors.silent;
     if (trace.ruleKey?.includes('eu') || trace.ruleKey?.includes('oi') || trace.ruleKey?.includes('eau')) return TraceColors.vowel;
     return TraceColors.default;
 }
 
 export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] }) {
   const [text, setText] = useState("un deux trois quatre cinq six sept huit neuf dix");
-  const [showArabic, setShowArabic] = useState(false);
   const [separator, setSeparator] = useState<SepKind>('hyphen');
   const { toast } = useToast();
 
- const { enTrace, arLine } = useMemo(() => {
+ const { enTrace } = useMemo(() => {
     const words = text.split(/(\s+)/u).filter(Boolean);
-    const outAR: string[] = [];
     const enTrace: (TokenTrace | string)[] = [];
     
     for (let i = 0; i < words.length; i++) {
@@ -58,7 +55,6 @@ export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] 
               if (subWord) {
                 const transformed = transformWordWithTrace(subWord);
                 enTrace.push(...transformed);
-                outAR.push(joinTokens(transformed.map(t=>t.out).filter(o => !o.startsWith('(')), toArabic));
               }
               if (idx < subWords.length - 1) {
                 enTrace.push(' ');
@@ -81,24 +77,20 @@ export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] 
                    }
                 }
                 enTrace.push(...traces);
-                outAR.push(joinTokens(traces.map(t=>t.out).filter(o => !o.startsWith('(')), toArabic));
                 continue;
             }
         }
 
        if (!/[\p{L}'’]/u.test(w)) {
-        outAR.push(w);
         enTrace.push(w);
         continue;
       }
       const transformed = transformWordWithTrace(w);
       enTrace.push(...transformed);
-      outAR.push(joinTokens(transformed.map(t=>t.out).filter(o => !o.startsWith('(')), toArabic));
     };
 
     return {
       enTrace,
-      arLine: outAR.join("").replace(/\s+([.,!?])/g, '$1'),
     };
   }, [text]);
 
@@ -115,7 +107,7 @@ export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] 
         }
 
         const isSilent = item.out.startsWith('(') && item.out.endsWith(')');
-        let enToken = isSilent ? toEN(item.out.slice(1, -1)) : toEN(item.out);
+        let enToken = isSilent ? item.src : toEN(item.out);
 
         const isLiaison = enToken.includes('‿');
         if (isLiaison) {
@@ -135,7 +127,7 @@ export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] 
                             <p className="font-mono text-sm">
                                 <span className="font-semibold">{item.src}</span> → <span className="font-semibold">{toEN(item.out)}</span>
                             </p>
-                            {item.note && <p className="text-sm text-muted-foreground">{item.note}</p>}
+                            {item.note && <p className="text-sm text-muted-foreground max-w-xs">{item.note}</p>}
                         </TooltipContent>
                     }
                 </Tooltip>
@@ -161,8 +153,6 @@ export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] 
   return (
     <>
       <WorkbenchHeader
-        showArabic={showArabic}
-        onShowArabicChange={setShowArabic}
         separator={separator}
         onSeparatorChange={setSeparator}
       />
@@ -173,10 +163,10 @@ export function AliRespeakerClient({ moduleTags = [] }: { moduleTags?: string[] 
           onTextChange={setText}
           lines={{ 
               en: enTrace.map(t => typeof t === 'string' ? t : toEN(t.out)).join(''), 
-              ar: arLine 
+              ar: '' // AR line removed
           }}
           trace={enTrace.filter(t => typeof t !== 'string') as TokenTrace[]}
-          showArabic={showArabic}
+          showArabic={false} // AR line removed
           enLineTraceComponent={renderEnLineWithTrace(enTrace)}
           moduleTags={moduleTags}
         />
