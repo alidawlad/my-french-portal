@@ -8,7 +8,7 @@ import { getRuleAssistantResponse, getDictionaryDefinitions, updateWordAnalysis,
 import type { RuleAssistantOutput } from "@/ai/flows/rule-assistant-flow";
 import type { DictionaryOutput } from '@/ai/flows/dictionary-flow';
 import { useToast } from "@/hooks/use-toast";
-import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, BookOpen, Volume2, Tag, Search, RefreshCw } from "lucide-react";
+import { BookMarked, BrainCircuit, MessageSquareQuote, ListFilter, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, BookOpen, Volume2, Tag, Search, RefreshCw, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from '../ui/badge';
@@ -18,6 +18,8 @@ import { Checkbox } from '../ui/checkbox';
 import { format, formatDistanceToNow } from 'date-fns';
 import { TokenTrace, toEN } from '@/lib/phonetics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Label } from '../ui/label';
+
 
 export type AIAnalysis = {
     definitions?: DictionaryOutput;
@@ -70,7 +72,7 @@ const RenderTraceWithTooltips = ({ trace }: { trace: TokenTrace[] }) => {
         const isSilent = item.out.startsWith('(') && item.out.endsWith(')');
         const enToken = isSilent ? item.src : toEN(item.out);
 
-        return (
+        const node = (
           <TooltipProvider key={`trace-${i}`}>
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -89,6 +91,8 @@ const RenderTraceWithTooltips = ({ trace }: { trace: TokenTrace[] }) => {
             </Tooltip>
           </TooltipProvider>
         );
+
+        return isSilent ? node : <span key={`trace-${i}`}>{node}</span>;
       })}
     </>
   );
@@ -246,6 +250,51 @@ const ClientRelativeTime = ({ date }: { date: Date }) => {
 };
 
 
+function EditTagsPopover({ word, onUpdateWord, children }: { word: SavedWord; onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void; children: React.ReactNode }) {
+    const [tagInput, setTagInput] = useState(word.tags.join(', '));
+    const [isSaving, setIsSaving] = useState(false);
+    const { toast } = useToast();
+
+    const handleSaveTags = async () => {
+        setIsSaving(true);
+        try {
+            const newTags = tagInput.split(',').map(t => t.trim()).filter(Boolean);
+            await updateWordAnalysis(word.id, { tags: newTags });
+            onUpdateWord(word.id, { ...word, tags: newTags });
+            toast({ title: "Tags Updated", description: "Your tags have been saved successfully." });
+        } catch (error) {
+            console.error("Tag update error:", error);
+            toast({ variant: "destructive", title: "Update Failed", description: "Could not save the new tags." });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    return (
+        <Popover>
+            <PopoverTrigger asChild>{children}</PopoverTrigger>
+            <PopoverContent className="w-80" onClick={(e) => e.stopPropagation()}>
+                <div className="grid gap-4">
+                    <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Edit Tags</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Update the tags for this word. Use commas to separate them.
+                        </p>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="tags">Tags</Label>
+                        <Input id="tags" value={tagInput} onChange={(e) => setTagInput(e.target.value)} />
+                    </div>
+                    <Button onClick={handleSaveTags} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; onDeleteWord: (id: string) => void, onUpdateWord: (wordId: string, updates: Partial<SavedWord>) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
@@ -376,10 +425,15 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
             <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center justify-between">
                     <span>{word.fr_line}</span>
-                    <div className="flex items-center gap-1">
+                     <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={handlePlayAudio} disabled={isPlaying} className="h-7 w-7 text-muted-foreground hover:text-foreground">
                             {isPlaying ? <Loader2 className="h-4 w-4 animate-spin"/> : <Volume2 className="h-4 w-4"/>}
                         </Button>
+                        <EditTagsPopover word={word} onUpdateWord={onUpdateWord}>
+                             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()}>
+                                <Tag className="h-4 w-4"/>
+                            </Button>
+                        </EditTagsPopover>
                          <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive hover:bg-destructive/10 h-7 w-7" disabled={isDeleting} onClick={(e) => e.stopPropagation()}>
