@@ -6,28 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BookMarked, Layers } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
-// This is now the generic page to handle all dynamic module structures.
-// The folder name `[week]/[class]` is kept for historical reasons, but it now uses a catch-all `...path` param.
 export default async function DynamicModulePage({ params }: { params: { path: string[] } }) {
     const path = params.path || [];
-
-    if (path.length < 2) {
-        notFound();
-    }
 
     let title = "Dynamic Module";
     let description = "The lab for analyzing and perfecting French for this specific session.";
     const moduleTags: string[] = [];
 
-    // Tutor session: /week-1/class-2
-    if (path[0].startsWith('week-') && path[1].startsWith('class-')) {
+    // Tutor session: /modules/week-1/class-2 (path length: 2)
+    if (path.length === 2 && path[0].startsWith('week-') && path[1].startsWith('class-')) {
         const weekId = path[0].split('-')[1];
         const classId = path[1].split('-')[1];
         title = `Tutor: Week ${weekId}, Class ${classId}`;
         description = `Words saved here will be tagged with 'week:${weekId}' and 'class:${classId}'.`;
         moduleTags.push(`week:${weekId}`, `class:${classId}`);
     } 
-    // Speak App session: /part-1/unit-2/lesson-speaking-drill
+    // Speak App session: /modules/part-1/unit-2/lesson-speaking-drill (path length: 3)
     else if (path.length === 3 && path[0].startsWith('part-') && path[1].startsWith('unit-') && path[2].startsWith('lesson-')) {
         const partId = path[0].split('-')[1];
         const unitId = path[1].split('-')[1];
@@ -35,8 +29,14 @@ export default async function DynamicModulePage({ params }: { params: { path: st
         title = `Speak App: Part ${partId}, Unit ${unitId}`;
         description = `Lesson: ${lessonType}. Words saved here will be tagged for this module.`;
         moduleTags.push(`part:${partId}`, `unit:${unitId}`, `lesson:${path[2].substring('lesson-'.length)}`);
-    } else {
-        // Fallback or handle other structures
+    } 
+    // Handle the original pronunciation module
+    else if (path.length === 1 && path[0] === 'pronunciation') {
+        title = "Pronunciation Workbench";
+        description = "The lab for analyzing and perfecting French pronunciation.";
+        moduleTags.push('pronunciation');
+    }
+    else {
         notFound();
     }
 
