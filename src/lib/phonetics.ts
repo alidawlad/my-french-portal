@@ -81,6 +81,7 @@ export const RULES: Rule[] = [
   { key: 'accentO', label: 'ô → OH', re: /[ô]/gi, replacement: 'OH', category: 'vowel', explanation: "The circumflex on 'o' often indicates a long /o/ sound and a historical, dropped 's'." },
   { key: 'accentU', label: 'û/ù → Ü', re: /[ûù]/gi, replacement: 'Ü', category: 'vowel', explanation: "Accents on 'u' don't change the sound (/y/) but distinguish words (e.g., 'ou' vs 'où')." },
   { key: 'xToS', label: 'final x → S', re: /x$/i, replacement: 'S', category: 'special', explanation: "In numbers like 'six' and 'dix', the final 'x' is pronounced as /s/ when at the end of a phrase." },
+  { key: 'finalE', label: 'final e → (e)', re: /e$/, replacement: '(E)', category: 'silent', explanation: "Rule: A final 'e' (schwa) is typically silent unless the word is only one syllable." },
 ];
 
 export const getRuleForWord = (word: string): Rule | undefined => {
@@ -105,7 +106,7 @@ const NUMBER_EXCEPTIONS: Record<string, TokenTrace[]> = {
     'un':     [{ src: 'un', out: 'UH~', changed: true, ruleKey: 'nasUN', note: 'un → nasal /œ̃/'}],
     'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö' }, {src: 'x', out: '(X)', changed: true, ruleKey: 'finalDrop', note: 'Rule: Final consonants are usually silent. Mnemoic: CaReFuL (C,R,F,L are often pronounced).'}],
     'trois':  [{ src: 't', out: 'T'}, { src: 'r', out: 'R'}, { src: 'oi', out: 'WA', changed: true, ruleKey: 'oi', note: 'oi → wa'}, {src: 's', out: '(S)', changed: true, ruleKey: 'finalDrop', note: 'Rule: Final consonants are usually silent.'}],
-    'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalDrop', note: 'Rule: A final \'e\' (schwa) is typically silent.'}],
+    'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalSchwaDrop', note: 'Rule: A final \'e\' (schwa) is typically silent.'}],
     'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'softC', note: 'c before i → s'}, { src: 'in', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'q', out: 'K'}],
     'six':    [{ src: 's', out: 'S'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
     'sept':   [{ src: 's', out: 'S'}, { src: 'e', out: 'EH'}, { src: 'p', out: '(P)', changed: true, ruleKey: 'septPdrop', note: 'Historical spelling: The \'p\' in "sept" is silent.'}, { src: 't', out: 'T'}],
@@ -241,26 +242,30 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
   // 3. Post-processing for context-sensitive rules (e.g., final consonants)
   let lastAlphaIndex = -1;
   for (let j = finalTraces.length - 1; j >= 0; j--) {
-      if (finalTraces[j].out.match(/^[A-Z]$/i) && !finalTraces[j].out.startsWith('(')) {
+      // Find the last trace that represents a letter and is not already marked as silent
+      if (/^[A-Z~]+$/.test(finalTraces[j].out) && !finalTraces[j].out.startsWith('(')) {
           lastAlphaIndex = j;
           break;
       }
   }
 
+
   if (lastAlphaIndex !== -1) {
     const lastTrace = finalTraces[lastAlphaIndex];
     const lastSrcChar = lastTrace.src.toLowerCase();
 
+    // Check if the source character is a consonant that should be silent at the end.
     if (!FINAL_CONSONANT_EXCEPTIONS.has(w.toLowerCase()) &&
         !PRONOUNCED_FINALS.includes(lastSrcChar) &&
-        /^[BDGPSTXZ]$/.test(lastTrace.out)) {
+        /[^aeiouyàâäéèêëîïôöùûüœ~]/.test(lastSrcChar)) { // A simple check for consonant
       lastTrace.out = `(${lastTrace.out.toUpperCase()})`;
       lastTrace.ruleKey = 'finalDrop';
       lastTrace.changed = true;
       lastTrace.note = `Rule: Final consonants are usually silent. Mnemonic: Only 'CaReFuL' consonants are typically pronounced.`;
     }
   }
-  
+
+  // Handle final 'e' after the consonant check, as it might be the last character.
   if (finalTraces.length > 1 && finalTraces[finalTraces.length - 1].src === 'e' && !finalTraces[finalTraces.length-1].changed) {
       const lastTrace = finalTraces[finalTraces.length - 1];
       lastTrace.out = '(E)';
@@ -274,3 +279,5 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
+
+    
