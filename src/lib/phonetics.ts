@@ -81,7 +81,7 @@ export const RULES: Rule[] = [
   { key: 'accentO', label: 'ô → OH', re: /[ô]/gi, replacement: 'OH', category: 'vowel', explanation: "The circumflex on 'o' often indicates a long /o/ sound and a historical, dropped 's'." },
   { key: 'accentU', label: 'û/ù → Ü', re: /[ûù]/gi, replacement: 'Ü', category: 'vowel', explanation: "Accents on 'u' don't change the sound (/y/) but distinguish words (e.g., 'ou' vs 'où')." },
   { key: 'xToS', label: 'final x → S', re: /x$/i, replacement: 'S', category: 'special', explanation: "In numbers like 'six' and 'dix', the final 'x' is pronounced as /s/ when at the end of a phrase." },
-  { key: 'finalE', label: 'final e → (e)', re: /e$/, replacement: '(E)', category: 'silent', explanation: "Rule: A final 'e' (schwa) is typically silent unless the word is only one syllable." },
+  { key: 'finalE', label: 'final e → (E)', re: /e$/i, replacement: '(E)', category: 'silent', explanation: "Rule: A final 'e' (schwa) is typically silent unless the word is only one syllable." },
 ];
 
 export const getRuleForWord = (word: string): Rule | undefined => {
@@ -101,10 +101,10 @@ export const getRuleForWord = (word: string): Rule | undefined => {
 export const SEP_MAP: Record<SepKind, string> = { hyphen: "‑", middot: "·", space: " ", none: "" };
 
 const PRONOUNCED_FINALS = ['c', 'r', 'f', 'l']; // "CaReFuL" mnemonic
-const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'anaïs', 'reims', 'six', 'dix', 'cinq', 'sept', 'huit']);
+const FINAL_CONSONANT_EXCEPTIONS = new Set(['bus', 'fils', 'ours', 'plus', 'tous', 'sens', 'anaïs', 'reims', 'six', 'dix', 'cinq', 'sept', 'huit', 'temps']);
 const NUMBER_EXCEPTIONS: Record<string, TokenTrace[]> = {
     'un':     [{ src: 'un', out: 'UH~', changed: true, ruleKey: 'nasUN', note: 'un → nasal /œ̃/'}],
-    'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö' }, {src: 'x', out: '(X)', changed: true, ruleKey: 'finalDrop', note: 'Rule: Final consonants are usually silent. Mnemoic: CaReFuL (C,R,F,L are often pronounced).'}],
+    'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö' }, {src: 'x', out: '(X)', changed: true, ruleKey: 'finalDrop', note: 'Rule: Final consonants are usually silent. Mnemonic: Only "CaReFuL" consonants (c,r,f,l) are typically pronounced.'}],
     'trois':  [{ src: 't', out: 'T'}, { src: 'r', out: 'R'}, { src: 'oi', out: 'WA', changed: true, ruleKey: 'oi', note: 'oi → wa'}, {src: 's', out: '(S)', changed: true, ruleKey: 'finalDrop', note: 'Rule: Final consonants are usually silent.'}],
     'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalSchwaDrop', note: 'Rule: A final \'e\' (schwa) is typically silent.'}],
     'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'softC', note: 'c before i → s'}, { src: 'in', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'q', out: 'K'}],
@@ -168,10 +168,10 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
       
       const parts = segment.src.split(rule.re);
       if (parts.length > 1) {
-          segment.src.match(new RegExp(rule.re.source, rule.re.flags))?.forEach((match, i) => {
-              const [firstPart, ...rest] = parts[i].split(match);
+          segment.src.match(new RegExp(rule.re.source, 'gi'))?.forEach((match) => {
+              const [firstPart, ...rest] = segment.src.split(match);
               if (firstPart) newSegments.push({ src: firstPart, transformed: false });
-
+              
               const replacement = rule.replacement;
               traces.push({
                   src: match,
@@ -181,14 +181,13 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
                   note: rule.explanation,
               });
               newSegments.push({ src: replacement, transformed: true });
-              if (rest.join(match)) newSegments.push({ src: rest.join(match), transformed: false });
+              segment.src = rest.join(match);
           });
-           if (parts[parts.length-1]) newSegments.push({ src: parts[parts.length-1], transformed: false});
+          if (segment.src) newSegments.push({ src: segment.src, transformed: false});
       } else {
         newSegments.push(segment);
       }
     });
-
     segments = newSegments.filter(s => s.src);
   });
   
@@ -261,12 +260,12 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
       lastTrace.out = `(${lastTrace.out.toUpperCase()})`;
       lastTrace.ruleKey = 'finalDrop';
       lastTrace.changed = true;
-      lastTrace.note = `Rule: Final consonants are usually silent. Mnemonic: Only 'CaReFuL' consonants are typically pronounced.`;
+      lastTrace.note = `Rule: Final consonants are usually silent. Mnemonic: Only "CaReFuL" consonants (c,r,f,l) are typically pronounced.`;
     }
   }
 
   // Handle final 'e' after the consonant check, as it might be the last character.
-  if (finalTraces.length > 1 && finalTraces[finalTraces.length - 1].src === 'e' && !finalTraces[finalTraces.length-1].changed) {
+  if (finalTraces.length > 1 && finalTraces[finalTraces.length - 1].out.toUpperCase() === 'E' && !finalTraces[finalTraces.length-1].changed) {
       const lastTrace = finalTraces[finalTraces.length - 1];
       lastTrace.out = '(E)';
       lastTrace.ruleKey = 'finalSchwaDrop';
