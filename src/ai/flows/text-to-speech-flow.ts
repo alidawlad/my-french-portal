@@ -57,7 +57,7 @@ const textToSpeechFlow = ai.defineFlow(
                 speechConfig: {
                     voiceConfig: {
                         // Using a high-quality French-appropriate voice.
-                        prebuiltVoiceConfig: { voiceName: 'Sulafat' },
+                        prebuiltVoiceConfig: { voiceName: 'fr-FR-Wavenet-E' },
                     },
                 },
             },
