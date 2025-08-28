@@ -64,7 +64,7 @@ export async function getDictionaryDefinitions(text: string): Promise<Dictionary
 }
 
 
-export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp'>): Promise<SavedWord> {
+export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'timestamp' | 'audio_data_uri'>): Promise<SavedWord> {
     if (!wordData.fr_line.trim()) {
         throw new Error("Cannot save an empty word.");
     }
@@ -82,6 +82,7 @@ export async function saveWordToRuleBook(wordData: Omit<SavedWord, 'id' | 'times
             id: docRef.id,
             ...wordData,
             timestamp: new Date().toISOString(), 
+            audio_data_uri: null, // Audio is no longer pre-saved.
         };
     } catch (error) {
         console.error("Error saving word to Rule Book:", error);
@@ -141,7 +142,7 @@ export async function getRuleBookWords(): Promise<SavedWord[]> {
                 ali_respell: data.ali_respell || '',
                 ali_respell_trace: data.ali_respell_trace || [],
                 analysis: data.analysis || {},
-                audio_data_uri: data.audio_data_uri || null,
+                audio_data_uri: data.audio_data_uri || null, // Keep this for potential old data, but new data will be null
                 tags: data.tags || [],
                 timestamp: timestampISO, // Always a serializable ISO string
             });

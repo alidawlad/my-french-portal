@@ -58,7 +58,6 @@ export function InputSection({
   const [tags, setTags] = useState("");
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<AIAnalysis>({});
-  const [audioData, setAudioData] = useState<string | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -68,7 +67,6 @@ export function InputSection({
     try {
       const { audio: audioDataUri } = await getAudioForText(text);
       if (audioDataUri) {
-        setAudioData(audioDataUri); // Cache the audio data
         const audio = new Audio(audioDataUri);
         audio.play();
         audio.onended = () => setIsPlaying(false);
@@ -80,7 +78,7 @@ export function InputSection({
          toast({ 
             variant: "destructive", 
             title: "Audio Generation Failed", 
-            description: "Could not generate audio. Please check your Gemini API key." 
+            description: "Could not generate audio for the provided text." 
         });
          setIsPlaying(false);
       }
@@ -163,7 +161,6 @@ export function InputSection({
             ali_respell: lines.en,
             ali_respell_trace: trace.map(t => ({...t, out: toEN(t.out)})), // Save the trace with EN tokens
             analysis,
-            audio_data_uri: audioData,
             tags: finalTags,
         });
 
@@ -176,7 +173,6 @@ export function InputSection({
         onTextChange("");
         setUserMeaning("");
         setAnalysis({});
-        setAudioData(null);
         setTags("");
         router.refresh(); // Refresh server components to show the new word in the list
 
@@ -232,7 +228,6 @@ export function InputSection({
               onTextChange(e.target.value);
               setAnalysis({}); // Reset analysis on new text
               setUserMeaning("");
-              setAudioData(null); // Reset audio on new text
               setTags("");
             }}
             rows={2}

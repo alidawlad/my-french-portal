@@ -37,7 +37,7 @@ export type SavedWord = {
   ali_respell: string; // Generated respelling
   ali_respell_trace: TokenTrace[]; // Rich trace data
   analysis: AIAnalysis;
-  audio_data_uri: string | null; // Base64 encoded audio data
+  audio_data_uri: string | null; // Base64 encoded audio data - now used as a cache
   tags: string[];
   timestamp: string; // Serialized as ISO string
 };
@@ -349,7 +349,7 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
     const handlePlayAudio = async (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent row from toggling
         setIsPlaying(true);
-        let audioDataUri = word.audio_data_uri;
+        let audioDataUri = word.audio_data_uri; // Use cached audio if available
         
         try {
           if (!audioDataUri) {
@@ -357,7 +357,7 @@ function SavedWordTableRow({ word, onDeleteWord, onUpdateWord }: { word: SavedWo
             const { audio } = await getAudioForText(word.fr_line);
             audioDataUri = audio;
             if (audioDataUri) {
-              await updateWordAnalysis(word.id, { audio_data_uri: audioDataUri });
+              // Cache the generated audio URI on the word object for this session
               onUpdateWord(word.id, { ...word, audio_data_uri: audioDataUri });
             }
           }
@@ -500,17 +500,18 @@ function SavedWordCard({ word, onDeleteWord, onUpdateWord }: { word: SavedWord; 
   };
 
   const handlePlayAudio = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row from toggling
+    e.stopPropagation();
     setIsPlaying(true);
-    let audioDataUri = word.audio_data_uri;
-    
+    let audioDataUri = word.audio_data_uri; // Use cached audio first
+
     try {
       if (!audioDataUri) {
         toast({ title: "Generating Audio...", description: "This may take a moment." });
         const { audio } = await getAudioForText(word.fr_line);
         audioDataUri = audio;
         if (audioDataUri) {
-          await updateWordAnalysis(word.id, { audio_data_uri: audioDataUri });
+          // Cache the generated audio on the word object for this session.
+          // This does not save it to the database.
           onUpdateWord(word.id, { ...word, audio_data_uri: audioDataUri });
         }
       }

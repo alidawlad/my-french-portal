@@ -54,18 +54,12 @@ const textToSpeechFlow = ai.defineFlow(
             model: googleAI.model('gemini-2.5-flash-preview-tts'),
             config: {
                 responseModalities: ['AUDIO'],
-                speechConfig: {
-                    voiceConfig: {
-                        // Using a high-quality French-appropriate voice.
-                        prebuiltVoiceConfig: { voiceName: 'fr-FR-Wavenet-E' },
-                    },
-                },
             },
             prompt: query,
         });
 
-        if (!media) {
-            throw new Error('no media returned');
+        if (!media?.url) {
+            throw new Error('Audio generation failed: no media was returned from the model.');
         }
 
         const audioBuffer = Buffer.from(
