@@ -33,7 +33,7 @@ export const LETTERS: Array<{ ch: string; nameIPA: string; ali: string; alt?: st
   { ch: "Q", nameIPA: "[ky]", ali: "kü", alt: "kyü", note: "k + front-rounded /y/ (round lips)." },
   { ch: "R", nameIPA: "[ɛʁ]", ali: "kh(r)", note: "Uvular; like a throaty 'kh' sound." },
   { ch: "S", nameIPA: "[ɛs]", ali: "ehs", alt: "ès" },
-  { ch_of_these: "T", nameIPA: "[te]", ali: "teh", alt: "té", note: "Avoid 'tee'." },
+  { ch: "T", nameIPA: "[te]", ali: "teh", alt: "té", note: "Avoid 'tee'." },
   { ch: "U", nameIPA: "[y]", ali: "ü", alt: "uu", note: "Front-rounded vowel. To make it, say 'ee' but with your lips rounded as if for 'oo'." },
   { ch: "V", nameIPA: "[ve]", ali: "veh", alt: "vé" },
   { ch: "W", nameIPA: "[dublə ve]", ali: "double vé" },
@@ -54,7 +54,7 @@ export type Rule = {
 // This list is now the single source of truth for transformations.
 // The order is important: longer, more specific matches should come first.
 export const RULES: Rule[] = [
-  { key: 'cEst', label: "c'est → S-EH", re: /c['’]\s*est\b/i, replacement: "S EH", category: 'special', explanation: "The common phrase 'c\'est' is pronounced as one unit: /sɛ/." },
+  { key: 'cEst', label: "c'est → S-EH", re: /c['’]\s*est\b/i, replacement: "S EH", category: 'special', explanation: "The common phrase 'c\\'est' is pronounced as one unit: /sɛ/." },
   { key: 'qu', label: 'qu → K', re: /qu/gi, replacement: 'K', category: 'special', explanation: "The 'qu' digraph is almost always pronounced as /k/." },
   { key: 'eau', label: 'eau → OH', re: /eau/gi, replacement: 'OH', category: 'vowel', explanation: "The trigraph 'eau' is a 'vowel team' that produces the /o/ sound, as in 'boat'." },
   { key: 'au', label: 'au → OH', re: /au/gi, replacement: 'OH', category: 'vowel', explanation: "Like 'eau', the 'au' digraph is pronounced /o/." },
@@ -63,13 +63,14 @@ export const RULES: Rule[] = [
   { key: 'ch', label: 'ch → SH', re: /ch/gi, replacement: 'SH', category: 'special', explanation: "The 'ch' digraph in French is usually soft, pronounced /ʃ/ like 'sh' in 'shoe'." },
   { key: 'ph', label: 'ph → F', re: /ph/gi, replacement: 'F', category: 'special', explanation: "Like in English, 'ph' is pronounced as /f/." },
   { key: 'ill', label: '-ill → Y', re: /(?<!\b[vVmM])i(ll\b)/gi, replacement: 'EE Y', category: 'special', explanation: "After a vowel, '-ill' often creates a 'y' sound (/j/), as in 'fille'. Exceptions exist (e.g., 'ville', 'mille')." },
-  { key: 'nasON', label: "on/om → OH(n)", re: /(on|om)(?![\wàâäéèêëîïôöùûüœ])/gi, replacement: 'OH~', category: 'nasal', explanation: "Nasal vowel. The sound is made in the back of the mouth with air passing through the nose. Think of the 'on' in 'bon'." },
+  { key: 'nasON', label: "on/om → OH(n)", re: /o[nm](?![\wàâäéèêëîïôöùûüœ])/gi, replacement: 'OH~', category: 'nasal', explanation: "Nasal vowel. The sound is made in the back of the mouth with air passing through the nose. Think of the 'on' in 'bon'." },
   { key: 'nasAN', label: "an/am/en/em → AH(n)", re: /(an|am|en|em)(?![\wàâäéèêëîïôöùûüœ])/gi, replacement: 'AH~', category: 'nasal', explanation: "A common nasal vowel, like in 'vent' or 'temps'. The 'en' in 'examen' is an exception." },
   { key: 'nasIN', label: "in/im/ain/ein/yn/ym → EH(n)", re: /(in|im|ain|ein|yn|ym)(?![\wàâäéèêëîïôöùûüœ])/gi, replacement: 'EH~', category: 'nasal', explanation: "A bright nasal sound, as in 'vin' or 'pain'." },
-  { key: 'nasUN', label: "un/um → UH(n)", re: /(un|um)(?![\wàâäéèêëîïôöùûüœ])/gi, replacement: 'UH~', category: 'nasal', explanation: "The nasal sound in 'un' or 'parfum'. Made by saying 'uh' with air passing through the nose." },
+  { key: 'nasUN', label: "un/um → UH(n)", re: /un(?![\wàâäéèêëîïôöùûüœ])/gi, replacement: 'UH~', category: 'nasal', explanation: "The nasal sound in 'un' or 'parfum'. Made by saying 'uh' with air passing through the nose." },
   { key: 'sBetweenVowels', label: 's between vowels → Z', re: /([aeiouyàâäéèêëîïôöùûüœ])s(?=[aeiouyàâäéèêëîïôöùûüœ])/gi, replacement: '$1Z', category: 'special', explanation: "A single 's' between two vowel sounds is typically voiced, like /z/." },
   { key: 'cSoft', label: 'c → S', re: /c(?=[eéiïy])/gi, replacement: 'S', category: 'special', explanation: "Soft C rule: When 'c' comes before an E, I, or Y, it is pronounced /s/." },
   { key: 'gSoft', label: 'g → ZH', re: /g(?=[eéiïy])/gi, replacement: 'ZH', category: 'special', explanation: "Soft G rule: When 'g' comes before an E, I, or Y, it is pronounced /ʒ/ (as in 'vision')." },
+  { key: 'eu', label: 'eu/œu → ö', re: /eu|œu/gi, replacement: 'EU', category: 'vowel', explanation: "The 'eu' or 'œu' sound produces a rounded vowel /ø/ or /œ/, similar to the German 'ö'." },
   { key: 'j', label: 'j → ZH', re: /j/gi, replacement: 'ZH', category: 'special', explanation: "The letter 'j' in French is consistently pronounced /ʒ/." },
   { key: 'hSilent', label: 'h → (H)', re: /h/gi, replacement: '(H)', category: 'silent', explanation: "Rule: The letter H is always silent in French, though it can sometimes block liaisons (h aspiré)." },
   { key: 'cedilla', label: 'ç → S', re: /ç/gi, replacement: 'S', category: 'special', explanation: "The cedilla (¸) guarantees a soft 'c' sound (/s/) before A, O, or U." },
@@ -107,7 +108,7 @@ const NUMBER_EXCEPTIONS: Record<string, TokenTrace[]> = {
     'deux':   [{ src: 'd', out: 'D'}, { src: 'eux', out: 'EU', changed: true, ruleKey: 'eu', note: 'eu → ö' }, {src: 'x', out: '(X)', changed: true, ruleKey: 'finalDrop', note: 'Rule: Final consonants are usually silent. Mnemonic: Only "CaReFuL" consonants (c,r,f,l) are typically pronounced.'}],
     'trois':  [{ src: 't', out: 'T'}, { src: 'r', out: 'R'}, { src: 'oi', out: 'WA', changed: true, ruleKey: 'oi', note: 'oi → wa'}, {src: 's', out: '(S)', changed: true, ruleKey: 'finalDrop', note: 'Rule: Final consonants are usually silent.'}],
     'quatre': [{ src: 'qu', out: 'K', changed: true, ruleKey: 'quK', note: 'qu → k'}, { src: 'a', out: 'AH'}, { src: 't', out: 'T'}, { src: 'r', out: 'R'}, {src: 'e', out: '(E)', changed: true, ruleKey: 'finalSchwaDrop', note: 'Rule: A final \'e\' (schwa) is typically silent.'}],
-    'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'softC', note: 'c before i → s'}, { src: 'in', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'q', out: 'K'}],
+    'cinq':   [{ src: 'c', out: 'S', changed: true, ruleKey: 'cSoft', note: 'c before i → s'}, { src: 'in', out: 'EH~', changed: true, ruleKey: 'nasIN', note: 'in → eh(n)'}, { src: 'q', out: 'K'}],
     'six':    [{ src: 's', out: 'S'}, { src: 'i', out: 'EE'}, { src: 'x', out: 'S', changed: true, ruleKey: 'finalX', note: 'final x → s'}],
     'sept':   [{ src: 's', out: 'S'}, { src: 'e', out: 'EH'}, { src: 'p', out: '(P)', changed: true, ruleKey: 'septPdrop', note: 'Historical spelling: The \'p\' in "sept" is silent.'}, { src: 't', out: 'T'}],
     'huit':   [{ src: 'h', out: '(H)', changed: true, ruleKey: 'hSilent', note: 'Rule: The letter H is always silent in French.'}, { src: 'ui', out: 'ÜEE', changed: true, ruleKey: 'uiGlide', note: 'ui → ü+ee'}, {src: 't', out: 'T'}],
@@ -146,137 +147,128 @@ export const toEN = (t: Token): string => {
 const isVowel = (c: string) => /[aeiouyàâäéèêëîïôöùûüœ]/i.test(c);
 
 export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
-  let w = wordRaw.normalize("NFC").replace(/[\.,!\?]$/, '');
-  let lw = w.toLowerCase();
-  if (!/[\p{L}'’]/u.test(w)) return [{ src: w, out: w as Token, changed: false }];
-  
-  if (NUMBER_EXCEPTIONS[lw]) {
-      return NUMBER_EXCEPTIONS[lw];
-  }
-
-  const traces: TokenTrace[] = [];
-  let segments: { src: string, transformed: boolean }[] = [{ src: lw, transformed: false }];
-
-  // 1. Systematically apply all defined rules
-  RULES.forEach(rule => {
-    let newSegments: { src: string, transformed: boolean }[] = [];
-    segments.forEach(segment => {
-      if (segment.transformed) {
-        newSegments.push(segment);
-        return;
-      }
-      
-      const parts = segment.src.split(rule.re);
-      if (parts.length > 1) {
-          segment.src.match(new RegExp(rule.re.source, 'gi'))?.forEach((match) => {
-              const [firstPart, ...rest] = segment.src.split(match);
-              if (firstPart) newSegments.push({ src: firstPart, transformed: false });
-              
-              const replacement = rule.replacement;
-              traces.push({
-                  src: match,
-                  out: replacement as Token,
-                  changed: true,
-                  ruleKey: rule.key,
-                  note: rule.explanation,
-              });
-              newSegments.push({ src: replacement, transformed: true });
-              segment.src = rest.join(match);
-          });
-          if (segment.src) newSegments.push({ src: segment.src, transformed: false});
-      } else {
-        newSegments.push(segment);
-      }
-    });
-    segments = newSegments.filter(s => s.src);
-  });
-  
-  // 2. Process remaining untransformed parts character-by-character
-  let finalTraces: TokenTrace[] = [];
-  segments.forEach(segment => {
-      if (segment.transformed) {
-          const trace = traces.find(t => t.out === segment.src);
-          if (trace) finalTraces.push(trace);
-      } else {
-          // Fallback for characters not covered by rules
-          for(const char of segment.src) {
-              let outToken: Token = char.toUpperCase();
-              if (char === "'") continue; // Skip apostrophes
-              switch(char) {
-                  case 'a': outToken = 'AH'; break;
-                  case 'b': outToken = 'B'; break;
-                  case 'c': outToken = 'K'; break; // Default hard C
-                  case 'd': outToken = 'D'; break;
-                  case 'e': outToken = 'EH'; break;
-                  case 'f': outToken = 'F'; break;
-                  case 'g': outToken = 'G'; break; // Default hard G
-                  case 'i': outToken = 'EE'; break;
-                  case 'k': outToken = 'K'; break;
-                  case 'l': outToken = 'L'; break;
-                  case 'm': outToken = 'M'; break;
-                  case 'n': outToken = 'N'; break;
-                  case 'o': outToken = 'OH'; break;
-                  case 'p': outToken = 'P'; break;
-                  case 'r': outToken = 'R'; break;
-                  case 's': outToken = 'S'; break;
-                  case 't': outToken = 'T'; break;
-                  case 'u': outToken = 'Ü'; break;
-                  case 'v': outToken = 'V'; break;
-                  case 'w': outToken = 'W'; break;
-                  case 'x': outToken = 'X'; break;
-                  case 'y': outToken = 'EE'; break; // Default 'y' as vowel
-                  case 'z': outToken = 'Z'; break;
-              }
-               finalTraces.push({
-                  src: char,
-                  out: outToken,
-                  changed: toEN(outToken) !== char.toLowerCase(),
-                  ruleKey: 'charMap'
-              });
-          }
-      }
-  });
-
-
-  // 3. Post-processing for context-sensitive rules (e.g., final consonants)
-  let lastAlphaIndex = -1;
-  for (let j = finalTraces.length - 1; j >= 0; j--) {
-      // Find the last trace that represents a letter and is not already marked as silent
-      if (/^[A-Z~]+$/.test(finalTraces[j].out) && !finalTraces[j].out.startsWith('(')) {
-          lastAlphaIndex = j;
-          break;
-      }
-  }
-
-
-  if (lastAlphaIndex !== -1) {
-    const lastTrace = finalTraces[lastAlphaIndex];
-    const lastSrcChar = lastTrace.src.toLowerCase();
-
-    // Check if the source character is a consonant that should be silent at the end.
-    if (!FINAL_CONSONANT_EXCEPTIONS.has(w.toLowerCase()) &&
-        !PRONOUNCED_FINALS.includes(lastSrcChar) &&
-        /[^aeiouyàâäéèêëîïôöùûüœ~]/.test(lastSrcChar)) { // A simple check for consonant
-      lastTrace.out = `(${lastTrace.out.toUpperCase()})`;
-      lastTrace.ruleKey = 'finalDrop';
-      lastTrace.changed = true;
-      lastTrace.note = `Rule: Final consonants are usually silent. Mnemonic: Only "CaReFuL" consonants (c,r,f,l) are typically pronounced.`;
+    let w = wordRaw.normalize("NFC").replace(/[\.,!\?]$/, '');
+    if (!w) return [];
+    let lw = w.toLowerCase();
+    
+    if (NUMBER_EXCEPTIONS[lw]) {
+        return NUMBER_EXCEPTIONS[lw];
     }
-  }
 
-  // Handle final 'e' after the consonant check, as it might be the last character.
-  if (finalTraces.length > 1 && finalTraces[finalTraces.length - 1].out.toUpperCase() === 'E' && !finalTraces[finalTraces.length-1].changed) {
-      const lastTrace = finalTraces[finalTraces.length - 1];
-      lastTrace.out = '(E)';
-      lastTrace.ruleKey = 'finalSchwaDrop';
-      lastTrace.changed = true;
-      lastTrace.note = 'Rule: A final \'e\' (schwa) is typically silent unless the word is only one syllable.';
-  }
+    const traces: TokenTrace[] = [];
+    let i = 0;
+    while (i < lw.length) {
+        let matched = false;
+        // Prioritize longer rules first
+        const sortedRules = [...RULES].sort((a, b) => {
+            const aMatch = lw.substring(i).match(new RegExp(`^${a.re.source}`));
+            const bMatch = lw.substring(i).match(new RegExp(`^${b.re.source}`));
+            if (aMatch && bMatch) return bMatch[0].length - aMatch[0].length;
+            return aMatch ? -1 : (bMatch ? 1 : 0);
+        });
 
-  return finalTraces;
+        for (const rule of sortedRules) {
+            const match = lw.substring(i).match(new RegExp(`^${rule.re.source}`, 'i'));
+            if (match) {
+                const matchedStr = match[0];
+                let replacement = rule.replacement;
+                // Handle special case for sBetweenVowels with capture group
+                 if (rule.key === 'sBetweenVowels') {
+                    replacement = 'Z'; 
+                 }
+                
+                traces.push({
+                    src: matchedStr,
+                    out: replacement as Token,
+                    changed: true,
+                    ruleKey: rule.key,
+                    note: rule.explanation,
+                });
+                i += matchedStr.length;
+                matched = true;
+                break;
+            }
+        }
+        
+        if (matched) continue;
+
+        // If no rule matched, process character by character
+        const char = lw[i];
+        if (char === "'") { i++; continue; }
+
+        let outToken: Token = char.toUpperCase();
+        let changed = false;
+        switch (char) {
+            case 'a': outToken = 'AH'; changed = true; break;
+            case 'b': outToken = 'B'; break;
+            case 'c': outToken = 'K'; break; // Default hard C
+            case 'd': outToken = 'D'; break;
+            case 'e': outToken = 'EH'; changed = true; break;
+            case 'f': outToken = 'F'; break;
+            case 'g': outToken = 'G'; break; // Default hard G
+            case 'i': outToken = 'EE'; changed = true; break;
+            case 'k': outToken = 'K'; break;
+            case 'l': outToken = 'L'; break;
+            case 'm': outToken = 'M'; break;
+            case 'n': outToken = 'N'; break;
+            case 'o': outToken = 'OH'; changed = true; break;
+            case 'p': outToken = 'P'; break;
+            case 'r': outToken = 'R'; break;
+            case 's': outToken = 'S'; break;
+            case 't': outToken = 'T'; break;
+            case 'u': outToken = 'Ü'; changed = true; break;
+            case 'v': outToken = 'V'; break;
+            case 'w': outToken = 'W'; break;
+            case 'x': outToken = 'X'; break;
+            case 'y': outToken = 'EE'; changed = true; break; // Default 'y' as vowel
+            case 'z': outToken = 'Z'; break;
+        }
+
+        traces.push({
+            src: char,
+            out: outToken,
+            changed: changed,
+            ruleKey: 'charMap'
+        });
+        i++;
+    }
+
+    // Post-processing for context-sensitive rules (e.g., final consonants)
+    // Find the last alphabetical trace to check for silent consonants
+    let lastAlphaIndex = -1;
+    for (let j = traces.length - 1; j >= 0; j--) {
+        if (/^[A-Z~]+$/.test(traces[j].out) && !traces[j].out.startsWith('(')) {
+            lastAlphaIndex = j;
+            break;
+        }
+    }
+
+    if (lastAlphaIndex !== -1) {
+        const lastTrace = traces[lastAlphaIndex];
+        const lastSrcChar = lastTrace.src.toLowerCase();
+
+        // Final consonant drop rule
+        if (!FINAL_CONSONANT_EXCEPTIONS.has(lw) &&
+            !PRONOUNCED_FINALS.includes(lastSrcChar) &&
+            !isVowel(lastSrcChar)) {
+          lastTrace.out = `(${lastTrace.out.toUpperCase()})`;
+          lastTrace.ruleKey = 'finalDrop';
+          lastTrace.changed = true;
+          lastTrace.note = `Rule: Final consonants are usually silent. Mnemonic: Only "CaReFuL" consonants (c,r,f,l) are typically pronounced.`;
+        }
+    }
+
+    // Special handling for final 'e' after consonant check
+    if (traces.length > 1 && traces[traces.length - 1].src.toLowerCase() === 'e' && !traces[traces.length-1].changed) {
+        const lastTrace = traces[traces.length - 1];
+        lastTrace.out = '(E)';
+        lastTrace.ruleKey = 'finalSchwaDrop';
+        lastTrace.changed = true;
+        lastTrace.note = 'Rule: A final \'e\' (schwa) is typically silent unless the word is only one syllable.';
+    }
+
+    return traces;
 };
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
-
-    
