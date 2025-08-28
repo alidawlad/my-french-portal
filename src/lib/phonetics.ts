@@ -20,10 +20,10 @@ export const LETTERS: Array<{ ch: string; nameIPA: string; ali: string; alt?: st
   { ch: "D", nameIPA: "[de]", ali: "deh", alt: "dé", note: "Avoid 'the' (no /θ/ in French)." },
   { ch: "E", nameIPA: "[ə]", ali: "uh", note: "This is the famous 'euh' → just 'uh'." },
   { ch: "F", nameIPA: "[ɛf]", ali: "ehf", alt: "èf" },
-  { ch: "G", nameIPA: "[ʒe]", ali: "zhay", alt: "jé", note: "It's /ʒ/ as in 'vision' → 'zh', not 'jsh'." },
+  { ch: "G", nameIPA: "[ʒe]", ali: "jay", alt: "jé", note: "It's /ʒ/ as in 'vision'." },
   { ch: "H", nameIPA: "[aʃ]", ali: "ash", note: "Letter name; sound is silent in words." },
   { ch: "I", nameIPA: "[i]", ali: "ee" },
-  { ch: "J", nameIPA: "[ʒi]", ali: "zhee", alt: "ji", note: "'zh' + 'ee'." },
+  { ch: "J", nameIPA: "[ʒi]", ali: "jee", alt: "ji", note: "'j' + 'ee'." },
   { ch: "K", nameIPA: "[ka]", ali: "kaah", alt: "ka", note: "Open /a/; length not phonemic, but this cue is fine." },
   { ch: "L", nameIPA: "[ɛl]", ali: "ehl" },
   { ch: "M", nameIPA: "[ɛm]", ali: "ehm" },
@@ -69,9 +69,9 @@ export const RULES: Rule[] = [
   { key: 'nasUN', label: "un/um → UH(n)", re: /un(?![\wàâäéèêëîïôöùûüœ])/gi, replacement: 'UH~', category: 'nasal', explanation: "The nasal sound in 'un' or 'parfum'. Made by saying 'uh' with air passing through the nose." },
   { key: 'sBetweenVowels', label: 's between vowels → Z', re: /([aeiouyàâäéèêëîïôöùûüœ])s(?=[aeiouyàâäéèêëîïôöùûüœ])/gi, replacement: '$1Z', category: 'special', explanation: "A single 's' between two vowel sounds is typically voiced, like /z/." },
   { key: 'cSoft', label: 'c → S', re: /c(?=[eéiïy])/gi, replacement: 'S', category: 'special', explanation: "Soft C rule: When 'c' comes before an E, I, or Y, it is pronounced /s/." },
-  { key: 'gSoft', label: 'g → ZH', re: /g(?=[eéiïy])/gi, replacement: 'ZH', category: 'special', explanation: "Soft G rule: When 'g' comes before an E, I, or Y, it is pronounced /ʒ/ (as in 'vision')." },
+  { key: 'gSoft', label: 'g → J', re: /g(?=[eéiïy])/gi, replacement: 'J', category: 'special', explanation: "Soft G rule: When 'g' comes before an E, I, or Y, it is pronounced /ʒ/ (as in 'vision')." },
   { key: 'eu', label: 'eu/œu → ö', re: /eu|œu/gi, replacement: 'EU', category: 'vowel', explanation: "The 'eu' or 'œu' sound produces a rounded vowel /ø/ or /œ/, similar to the German 'ö'." },
-  { key: 'j', label: 'j → ZH', re: /j/gi, replacement: 'ZH', category: 'special', explanation: "The letter 'j' in French is consistently pronounced /ʒ/." },
+  { key: 'j', label: 'j → J', re: /j/gi, replacement: 'J', category: 'special', explanation: "The letter 'j' in French is consistently pronounced /ʒ/." },
   { key: 'hSilent', label: 'h → (H)', re: /h/gi, replacement: '(H)', category: 'silent', explanation: "Rule: The letter H is always silent in French, though it can sometimes block liaisons (h aspiré)." },
   { key: 'cedilla', label: 'ç → S', re: /ç/gi, replacement: 'S', category: 'special', explanation: "The cedilla (¸) guarantees a soft 'c' sound (/s/) before A, O, or U." },
   { key: 'finalC', label: 'Final C', re: /c$/i, replacement: 'K', category: 'special', explanation: "Final 'c' is usually pronounced, unlike many other final consonants." },
@@ -132,7 +132,7 @@ export const toEN = (t: Token): string => {
     case "ÜEE": return "üee";
     case "W": return "w";
     case "SH": return "sh";
-    case "ZH": return "zh";
+    case "J": return "j";
     case "NY": return "ny";
     case "Y": return "y";
     case "R": return "kh(r)";
@@ -272,3 +272,4 @@ export const transformWordWithTrace = (wordRaw: string): TokenTrace[] => {
 
 export const joinTokens = (tokens: Token[], renderer: (t: Token) => string) =>
   tokens.map(renderer).join("").replace(/\s+/g, " ").trim();
+
